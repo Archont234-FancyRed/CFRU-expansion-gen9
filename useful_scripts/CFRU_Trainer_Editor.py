@@ -29,7 +29,7 @@ PARTY_TYPE_UNION_MAP = {
     1: "NoItemDefaultMoves",
     2: "ItemDefaultMoves", 
     3: "NoItemCustomMoves",
-    4: "ItemCustomMoves"
+   4: "ItemCustomMoves"
 }
 
 TRAINER_PICS = {
@@ -237,6 +237,11 @@ MUSIC_OPTIONS = [
     ("Rich Boy/Gentleman", "TRAINER_ENCOUNTER_MUSIC_RICH")
 ]
 
+POKEMON_SPRITE_TABLE_ADDRESS = 0x08000128
+POKEMON_PALETTE_TABLE_ADDRESS = 0x08000130
+POKEMON_SPRITE_SIZE = (64 * 64) // 2  # 4bpp, 2048 bytes para sprites 64x64
+POKEMON_PALETTE_SIZE = 0x20  # 32 bytes = 16 cores
+
 class TrainerEditorUI:
     def __init__(self, root):
         self.root = root
@@ -262,6 +267,11 @@ class TrainerEditorUI:
         self.PALETTE_ENTRIES = 16  # 16 cores na paleta
         self.sprite_img = None
         self.tk_img = None
+        
+        self.pokemon_sprite_addresses = []
+        self.pokemon_palette_addresses = []
+        self.pokemon_sprite_images = []  # Para armazenar as imagens dos sprites
+        self.pokemon_sprite_labels = []  # Para armazenar os labels dos sprites
         
         # Edit Party Funcs
         self.editing_pokemon_mode = False
@@ -576,7 +586,7 @@ class TrainerEditorUI:
             self.prompt_for_rom()
             
     def prompt_for_rom(self):
-        """Pede ao usuário para selecionar a ROM BPRE0.gba"""
+        """Pede ao usuário para selecionar la ROM BPRE0.gba"""
         rom_path = filedialog.askopenfilename(
             title="Select BPRE0.gba ROM",
             filetypes=[("GBA ROMs", "*.gba"), ("All files", "*.*")]
@@ -598,6 +608,7 @@ class TrainerEditorUI:
         """Inicializa o editor após a pasta ser selecionada"""
         self.clear_main_window()
         self.root.geometry("1200x800")
+        self.root.state('zoomed')
         
         # Define os paths agora que BASE_DIR está definido
         self.TRAINER_DATA_PATH = self.BASE_DIR / "src" / "Tables" / "trainer_data.c"
@@ -615,16 +626,111 @@ class TrainerEditorUI:
         self.SPRITE_ADDRESSES_GBA = self.read_sprite_table()
         self.PALETTE_ADDRESSES_GBA = self.read_palette_table()
         
+        # Carrega as tabelas de sprites e paletas dos Pokémon
+        self.load_pokemon_sprite_tables()
+        
         # Restante da inicialização
         self.load_initial_data()
         self.setup_styles()
+        
+        # Carrega o mapeamento de espécies
+        self.load_species_mapping()
         
         self.party_type_var = tk.IntVar(value=4)
         self.party_type_var.trace('w', self.update_party_fields)
         
         self.setup_ui()
         self.populate_trainer_tree()
+    
+    def load_pokemon_sprite_tables(self):
+        """Carrega as tabelas de sprites e paletas dos Pokémon da ROM"""
+        try:
+            # Lê o ponteiro para a tabela de sprites
+            sprite_table_ptr = self.read_pointer(POKEMON_SPRITE_TABLE_ADDRESS)
+            print(f"Sprite table pointer: 0x{sprite_table_ptr:X}")
+            
+            # Lê o ponteiro para a tabela de paletas
+            palette_table_ptr = self.read_pointer(POKEMON_PALETTE_TABLE_ADDRESS)
+            print(f"Palette table pointer: 0x{palette_table_ptr:X}")
+            
+            # Lê a tabela de sprites (cada entrada tem 8 bytes: 4 bytes de endereço + 4 bytes de info)
+            self.pokemon_sprite_addresses = self.read_sprite_address_table(sprite_table_ptr)
+            
+            # Lê a tabela de paletas (cada entrada tem 8 bytes: 4 bytes de endereço + 4 bytes de info)
+            self.pokemon_palette_addresses = self.read_sprite_address_table(palette_table_ptr)
+            
+            print(f"Loaded {len(self.pokemon_sprite_addresses)} Pokémon sprite addresses")
+            print(f"Loaded {len(self.pokemon_palette_addresses)} Pokémon palette addresses")
+            
+            # Debug: mostra os primeiros endereços
+            for i in range(min(10, len(self.pokemon_sprite_addresses))):
+                print(f"Sprite {i}: 0x{self.pokemon_sprite_addresses[i]:X}")
+            for i in range(min(10, len(self.pokemon_palette_addresses))):
+                print(f"Palette {i}: 0x{self.pokemon_palette_addresses[i]:X}")
+            
+        except Exception as e:
+            print(f"Error loading Pokémon sprite tables: {e}")
+            # Fallback para evitar quebrar o programa
+            self.pokemon_sprite_addresses = []
+            self.pokemon_palette_addresses = []
+
+    def read_pointer(self, address):
+        """Lê um ponteiro de 4 bytes da ROM e converte para endereço GBA"""
+        try:
+            with open(self.ROM_PATH, 'rb') as rom_file:
+                offset = self.gba_addr_to_file_offset(address)
+                rom_file.seek(offset)
+                pointer_data = rom_file.read(4)
+                if len(pointer_data) == 4:
+                    pointer = struct.unpack('<I', pointer_data)[0]
+                    print(f"Raw pointer at 0x{address:X}: 0x{pointer:X}")
+                    return pointer
+        except Exception as e:
+            print(f"Error reading pointer at 0x{address:X}: {e}")
+        return 0
         
+    def read_sprite_address_table(self, table_address):
+        """Lê uma tabela de endereços de sprites/paletas (8 bytes por entrada)"""
+        addresses = []
+        try:
+            with open(self.ROM_PATH, 'rb') as rom_file:
+                offset = self.gba_addr_to_file_offset(table_address)
+                rom_file.seek(offset)
+                
+                # Lê entradas até encontrar um endereço nulo (0)
+                entry_count = 0
+                while True:
+                    entry_data = rom_file.read(8)
+                    if not entry_data or len(entry_data) < 8:
+                        break
+                    
+                    # Os primeiros 4 bytes são o endereço do sprite/paleta
+                    sprite_addr = struct.unpack('<I', entry_data[:4])[0]
+                    
+                    # Verifica se é um endereço válido (não nulo)
+                    if sprite_addr == 0:
+                        # Pula esta entrada mas continua lendo as próximas
+                        addresses.append(0)  # Adiciona zero para manter o índice
+                        entry_count += 1
+                        continue
+                    
+                    # Verifica se o endereço está dentro dos limites razoáveis da ROM
+                    if sprite_addr < 0x08000000 or sprite_addr > 0x09FFFFFF:
+                        print(f"Invalid sprite address: 0x{sprite_addr:X}")
+                        break
+                    
+                    addresses.append(sprite_addr)
+                    entry_count += 1
+                    
+                    # Limita a um número máximo de entradas para evitar loops infinitos
+                    if entry_count > 1500:  # Número máximo de espécies
+                        break
+                        
+        except Exception as e:
+            print(f"Error reading sprite address table at 0x{table_address:X}: {e}")
+        
+        return addresses
+    
     def load_initial_data(self):
         """Carrega todos os dados iniciais necessários"""
         self.TRAINER_CLASSES = self.load_trainer_classes()
@@ -689,13 +795,14 @@ class TrainerEditorUI:
         """Analisa o arquivo de parties e retorna um dicionário com os dados"""
         parties = {}
         current_party = None
+        current_pokemon = None
         i = 0
         n = len(self.party_lines)
         
         while i < n:
             line = self.party_lines[i].strip()
             
-            # Padrão 1: static const struct ... party_name[] = {
+            # Padrão: static const struct ... party_name[] = {
             if ('static const struct' in line or 'const struct' in line) and '[] = {' in line:
                 # Extrai o nome da party
                 party_name = line.split('[] = {')[0].split()[-1]
@@ -706,8 +813,17 @@ class TrainerEditorUI:
                     struct_name = struct_match.group(1)
                     party_type = self.get_party_type_from_struct(struct_name)
                 else:
-                    # Fallback se não conseguir extrair o nome da struct
-                    party_type = 4
+                    # Fallback - tenta determinar pelo conteúdo da linha
+                    if 'ItemCustomMoves' in line:
+                        party_type = 4
+                    elif 'NoItemCustomMoves' in line:
+                        party_type = 3
+                    elif 'ItemDefaultMoves' in line:
+                        party_type = 2
+                    elif 'NoItemDefaultMoves' in line:
+                        party_type = 1
+                    else:
+                        party_type = 4  # Default
                 
                 current_party = {
                     'name': party_name,
@@ -721,95 +837,68 @@ class TrainerEditorUI:
             if current_party:
                 # Início de um novo Pokémon
                 if line.startswith('{'):
-                    pokemon = {'party_type': current_party['type']}
+                    current_pokemon = {
+                        'party_type': current_party['type'],
+                        'moves': ['MOVE_NONE', 'MOVE_NONE', 'MOVE_NONE', 'MOVE_NONE'],
+                        'ivs': ['0', '0', '0', '0', '0', '0'],
+                        'evs': ['0', '0', '0', '0', '0', '0']
+                    }
                     i += 1
-                    
-                    # Processa todas as propriedades do Pokémon
-                    while i < n:
-                        line = self.party_lines[i].strip()
-                        
-                        # Fim do Pokémon
-                        if line.startswith('},') or line.startswith('}'):
-                            break
-                        
-                        # Campos simples (.campo = valor)
-                        if line.startswith('.'):
-                            key_value = line.split('=', 1)
-                            if len(key_value) == 2:
-                                key = key_value[0].strip().strip('.')
-                                value = key_value[1].split(',')[0].strip()
-                                
-                                if key == 'lvl':
-                                    pokemon['level'] = value
-                                elif key == 'species':
-                                    pokemon['species'] = value
-                                elif key == 'heldItem':
-                                    pokemon['item'] = value
-                                elif key == 'ability':
-                                    pokemon['ability'] = value
-                                elif key == 'nature':
-                                    pokemon['nature'] = value
-                                elif key == 'teraType':
-                                    pokemon['tera_type'] = value
-                        
-                        # Campos com arrays (.campo = { ... })
-                        # Processa moves
-                        if '.moves = {' in line:
-                            moves = []
-                            if '{' in line and '}' in line:
-                                moves_part = line.split('{')[1].split('}')[0]
-                                moves = [m.strip() for m in moves_part.split(',') if m.strip()]
-                            else:
-                                i += 1
-                                while i < n and '}' not in self.party_lines[i]:
-                                    move_line = self.party_lines[i].strip().strip(',')
-                                    if move_line:
-                                        moves.append(move_line)
-                                    i += 1
-                            pokemon['moves'] = moves
-                        
-                        elif '.ivSpread = {' in line:
-                            ivs = []
-                            if '{' in line and '}' in line:
-                                # Formato em uma linha: .ivSpread = {31, 31, 31, 31, 31, 31},
-                                ivs_part = line.split('{')[1].split('}')[0]
-                                ivs = [iv.strip() for iv in ivs_part.split(',') if iv.strip()]
-                            else:
-                                # Formato multi-linha:
-                                i += 1
-                                while i < n and '}' not in self.party_lines[i]:
-                                    iv_line = self.party_lines[i].strip().strip(',')
-                                    if iv_line:
-                                        ivs.append(iv_line)
-                                    i += 1
-                            # Garante que temos exatamente 6 valores
-                            if len(ivs) < 6:
-                                ivs += ['0'] * (6 - len(ivs))
-                            pokemon['ivs'] = ivs[:6]  # Pega apenas os 6 primeiros
-                        
-                        elif '.evSpread = {' in line:
-                            evs = []
-                            if '{' in line and '}' in line:
-                                # Formato em uma linha: .evSpread = {5, 5, 5, 5, 5, 5},
-                                evs_part = line.split('{')[1].split('}')[0]
-                                evs = [ev.strip() for ev in evs_part.split(',') if ev.strip()]
-                            else:
-                                # Formato multi-linha:
-                                i += 1
-                                while i < n and '}' not in self.party_lines[i]:
-                                    ev_line = self.party_lines[i].strip().strip(',')
-                                    if ev_line:
-                                        evs.append(ev_line)
-                                    i += 1
-                            # Garante que temos exatamente 6 valores
-                            if len(evs) < 6:
-                                evs += ['0'] * (6 - len(evs))
-                            pokemon['evs'] = evs[:6]  # Pega apenas os 6 primeiros
-                        
+                    continue
+                
+                # Processa campos do Pokémon
+                if current_pokemon is not None:
+                    # Fim do Pokémon
+                    if line.startswith('},') or line.startswith('}'):
+                        current_party['pokemons'].append(current_pokemon)
+                        current_pokemon = None
                         i += 1
+                        continue
                     
-                    # Adiciona o Pokémon à party
-                    current_party['pokemons'].append(pokemon)
+                    # Campos com valores simples
+                    if '.lvl =' in line:
+                        current_pokemon['level'] = line.split('=')[1].strip().rstrip(',')
+                    elif '.species =' in line:
+                        current_pokemon['species'] = line.split('=')[1].strip().rstrip(',')
+                    elif '.heldItem =' in line:
+                        current_pokemon['item'] = line.split('=')[1].strip().rstrip(',')
+                    elif '.ability =' in line:
+                        current_pokemon['ability'] = line.split('=')[1].strip().rstrip(',')
+                    elif '.nature =' in line:
+                        current_pokemon['nature'] = line.split('=')[1].strip().rstrip(',')
+                    elif '.teraType =' in line:
+                        current_pokemon['tera_type'] = line.split('=')[1].strip().rstrip(',')
+                    
+                    # Campos com arrays
+                    elif '.moves = {' in line:
+                        moves = self.parse_array_field(i, 'moves')
+                        # Preenche os 4 slots de movimentos
+                        for j in range(4):
+                            if j < len(moves):
+                                current_pokemon['moves'][j] = moves[j]
+                            else:
+                                current_pokemon['moves'][j] = 'MOVE_NONE'
+                        i = self.skip_to_array_end(i)
+                    
+                    elif '.ivSpread = {' in line:
+                        ivs = self.parse_array_field(i, 'ivSpread')
+                        # Garante 6 valores
+                        for j in range(6):
+                            if j < len(ivs):
+                                current_pokemon['ivs'][j] = ivs[j]
+                            else:
+                                current_pokemon['ivs'][j] = '0'
+                        i = self.skip_to_array_end(i)
+                    
+                    elif '.evSpread = {' in line:
+                        evs = self.parse_array_field(i, 'evSpread')
+                        # Garante 6 valores
+                        for j in range(6):
+                            if j < len(evs):
+                                current_pokemon['evs'][j] = evs[j]
+                            else:
+                                current_pokemon['evs'][j] = '0'
+                        i = self.skip_to_array_end(i)
                 
                 # Fim da party
                 elif line.startswith('};'):
@@ -818,98 +907,71 @@ class TrainerEditorUI:
             
             i += 1
         
-        # Fallback para parties embutidas diretamente na definição do treinador
-        for i in range(n):
+        return parties
+    
+    def skip_to_array_end(self, start_index):
+        """Pula para o final de um array"""
+        i = start_index
+        n = len(self.party_lines)
+        brace_count = 0
+        
+        while i < n:
             line = self.party_lines[i].strip()
             
-            if line.startswith('[') and '] = {' in line:
-                trainer_id = line.split('[')[1].split(']')[0].strip()
-                j = i + 1
-                while j < n:
-                    inner_line = self.party_lines[j].strip()
-                    if '.party = {' in inner_line:
-                        # Tenta extrair o tipo da party
-                        party_type = 4  # Default
-                        if 'NoItemDefaultMoves' in inner_line:
-                            party_type = 1
-                        elif 'ItemDefaultMoves' in inner_line:
-                            party_type = 2
-                        elif 'NoItemCustomMoves' in inner_line:
-                            party_type = 3
-                        
-                        party_name = f"{trainer_id}_party"
-                        party = {
-                            'name': party_name,
-                            'type': party_type,
-                            'pokemons': []
-                        }
-                        
-                        # Encontra o início da party
-                        k = j
-                        while k < n and '{' not in self.party_lines[k]:
-                            k += 1
-                        
-                        if k >= n:
+            if '{' in line:
+                brace_count += line.count('{')
+            if '}' in line:
+                brace_count -= line.count('}')
+                if brace_count <= 0:
+                    return i
+            
+            i += 1
+        
+        return i
+    
+    def parse_array_field(self, start_index, field_name):
+        """Analisa um campo de array como moves, ivSpread, evSpread"""
+        values = []
+        i = start_index
+        n = len(self.party_lines)
+        
+        # Encontra a linha que começa o array
+        while i < n:
+            line = self.party_lines[i].strip()
+            if f'.{field_name} = {{' in line:
+                # Verifica se está em uma linha só
+                if '}' in line:
+                    # Array em uma linha: .moves = {MOVE_MEGAHORN, MOVE_EARTHQUAKE, MOVE_COUNTER, MOVE_ROCKTOMB},
+                    array_content = line.split('{', 1)[1].split('}', 1)[0]
+                    values = [v.strip() for v in array_content.split(',') if v.strip()]
+                    break
+                else:
+                    # Array multi-linha
+                    i += 1
+                    while i < n:
+                        line = self.party_lines[i].strip()
+                        if line.startswith('}'):
                             break
-                        
-                        k += 1  # Pula a linha com '{'
-                        
-                        # Processa os Pokémon
-                        while k < n:
-                            pokemon_line = self.party_lines[k].strip()
-                            if pokemon_line.startswith('}'):
-                                break
-                            
-                            if pokemon_line.startswith('{'):
-                                pokemon = {'party_type': party_type}
-                                k += 1
-                                
-                                while k < n:
-                                    pline = self.party_lines[k].strip()
-                                    if pline.startswith('},') or pline.startswith('}'):
-                                        break
-                                    
-                                    if pline.startswith('.'):
-                                        key = pline.split('.')[1].split('=')[0].strip()
-                                        value = pline.split('=')[1].split(',')[0].strip()
-                                        
-                                        if key == 'lvl':
-                                            pokemon['level'] = value
-                                        elif key == 'species':
-                                            pokemon['species'] = value
-                                        elif key == 'heldItem':
-                                            pokemon['item'] = value
-                                    
-                                    k += 1
-                                
-                                party['pokemons'].append(pokemon)
-                            
-                            k += 1
-                        
-                        parties[party_name] = party
-                        break
-                    
-                    if inner_line == '},' or inner_line == '};':
-                        break
-                    
-                    j += 1
+                        # Remove vírgulas e espaços, mantém apenas valores válidos
+                        value = line.strip().rstrip(',')
+                        if value and not value.startswith('//'):  # Ignora comentários
+                            values.append(value)
+                        i += 1
+                    break
+            i += 1
         
-        return parties
-        
+        return values
+    
     def get_party_type_from_struct(self, struct_name):
         """Determina o tipo de party baseado no nome da estrutura"""
-        # Mapeia explicitamente todos os nomes de estruturas conhecidos
-        if "TrainerMonNoItemDefaultMoves" in struct_name:
-            return 1
-        elif "TrainerMonItemDefaultMoves" in struct_name:
-            return 2
-        elif "TrainerMonNoItemCustomMoves" in struct_name:
-            return 3
-        elif "TrainerMonItemCustomMoves" in struct_name:
-            return 4
-        # Fallback para o tipo mais comum
-        print(f"Tipo de party não reconhecido: {struct_name}. Usando tipo 4 como padrão.")
-        return 4
+        type_map = {
+            'TrainerMonNoItemDefaultMoves': 1,
+            'TrainerMonItemDefaultMoves': 2,
+            'TrainerMonNoItemCustomMoves': 3,
+            'TrainerMonItemCustomMoves': 4
+        }
+        
+        return type_map.get(struct_name, 4)  # Default para ItemCustomMoves
 
     def load_trainer_classes(self):
         """Carrega as classes de treinador, removendo o prefixo 'CLASS_'"""
@@ -1218,7 +1280,7 @@ class TrainerEditorUI:
     def save_opponents_file(self):
         """Salva as alterações no arquivo opponents.h, inserindo novos defines acima do TRAINERS_COUNT"""
         try:
-            # Encontra a posição da linha TRAINERS_COUNT
+            # Encontra la posição da linha TRAINERS_COUNT
             trainers_count_index = -1
             trainers_count_line = None
             
@@ -1445,36 +1507,82 @@ class TrainerEditorUI:
         style.configure("Title.TLabel", font=('Helvetica', 10, 'bold'))
         style.configure("Section.TFrame", relief=tk.GROOVE, borderwidth=2)
         style.configure("Section.TLabel", font=('Helvetica', 9, 'bold'))
-    
+        style.configure("Blue.TLabelframe.Label", foreground="blue", font=('Helvetica', 9, 'bold'))
+        
     def setup_ui(self):
         """Configura a interface do usuário"""
-        self.main_paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
-        self.main_paned.pack(fill=tk.BOTH, expand=True)
+        # Frame principal com grid layout
+        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
-        # Painel esquerdo (lista de treinadores)
-        self.left_frame = ttk.Frame(self.main_paned, width=300)
-        self.main_paned.add(self.left_frame)
-        self.setup_trainer_list()
+        # Configura expansão
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
+        main_frame.columnconfigure(1, weight=1)
+        main_frame.rowconfigure(1, weight=1)
         
-        # Painel direito (detalhes do treinador)
-        self.right_frame = ttk.Frame(self.main_paned)
-        self.main_paned.add(self.right_frame)
-        self.setup_trainer_details()
+        # Painel esquerdo (lista de treinadores + botões)
+        left_frame = ttk.Frame(main_frame, width=300)
+        left_frame.grid(row=0, column=0, rowspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
         
-        # Botões inferiores
-        self.setup_bottom_buttons()
+        # Configura o treeview de treinadores
+        self.setup_trainer_list(left_frame)
         
-        self.populate_trainer_tree()
+        # Painel direito dividido em 3 seções
+        right_frame = ttk.Frame(main_frame)
+        right_frame.grid(row=0, column=1, rowspan=3, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Seção superior direita (Trainer Data + Items)
+        top_right_frame = ttk.Frame(right_frame)
+        top_right_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N))
+        
+        # Trainer Data (canto superior esquerdo)
+        trainer_data_frame = ttk.LabelFrame(top_right_frame, text="Trainer Data", padding="5", style="Blue.TLabelframe")
+        trainer_data_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N), padx=(0, 10))
+        self.setup_trainer_data_tab(trainer_data_frame)
+        
+        # Items (canto superior direito)
+        items_frame = ttk.LabelFrame(top_right_frame, text="Items", padding="5", style="Blue.TLabelframe")
+        items_frame.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N))
+        self.setup_items_tab(items_frame)
+        
+        # Options (abaixo de Items)
+        options_frame = ttk.LabelFrame(right_frame, text="Options", padding="5", style="Blue.TLabelframe")
+        options_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N), pady=(10, 10))
+        self.setup_options_tab(options_frame)
+        
+        # Party (parte de baixo)
+        party_frame = ttk.LabelFrame(right_frame, text="Party", padding="5", style="Blue.TLabelframe")
+        party_frame.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.setup_party_tab(party_frame)
+        
+        # Botões inferiores (agora na coluna esquerda)
+        button_frame = ttk.Frame(left_frame)
+        button_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        ttk.Button(button_frame, text="Save Trainer", command=self.save_trainer).pack(side=tk.LEFT, padx=2)
+        ttk.Button(button_frame, text="Save All Files", command=self.save_files).pack(side=tk.LEFT, padx=2)
+        ttk.Button(button_frame, text="Cancel", command=self.root.quit).pack(side=tk.RIGHT, padx=2)
+        
+        # Configura expansão dos frames
+        left_frame.columnconfigure(0, weight=1)
+        left_frame.rowconfigure(1, weight=1)
+        right_frame.columnconfigure(0, weight=1)
+        right_frame.rowconfigure(2, weight=1)
+        top_right_frame.columnconfigure(0, weight=1)
+        top_right_frame.columnconfigure(1, weight=1)
+        party_frame.columnconfigure(0, weight=1)
+        party_frame.rowconfigure(0, weight=1)
 
-    def setup_trainer_list(self):
+    def setup_trainer_list(self, parent):
         """Configura o painel esquerdo com a lista de treinadores"""
         # Frame de título
-        title_frame = ttk.Frame(self.left_frame)
+        title_frame = ttk.Frame(parent)
         title_frame.pack(fill=tk.X, pady=5)
         ttk.Label(title_frame, text="Trainer List", style="Title.TLabel").pack()
         
         # Treeview para lista de treinadores
-        tree_frame = ttk.Frame(self.left_frame)
+        tree_frame = ttk.Frame(parent)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
         self.trainer_tree = ttk.Treeview(tree_frame, columns=("ID", "Trainer"), show="headings")
@@ -1492,47 +1600,22 @@ class TrainerEditorUI:
         self.trainer_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Botões de ação
-        btn_frame = ttk.Frame(self.left_frame)
-        btn_frame.pack(fill=tk.X, padx=5, pady=5)
+        # Botões de ação dos treinadores
+        trainer_btn_frame = ttk.Frame(parent)
+        trainer_btn_frame.pack(fill=tk.X, padx=5, pady=5)
         
-        ttk.Button(btn_frame, text="Add", command=self.add_trainer).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Remove", command=self.remove_trainer).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self.refresh_data).pack(side=tk.LEFT, padx=2)
-
-    def setup_trainer_details(self):
-        """Configura o painel direito com as abas de detalhes"""
-        notebook = ttk.Notebook(self.right_frame)
-        notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
-        # Aba Trainer Data
-        data_frame = ttk.Frame(notebook)
-        notebook.add(data_frame, text="Trainer Data")
-        self.setup_trainer_data_tab(data_frame)
-        
-        # Aba Items
-        items_frame = ttk.Frame(notebook)
-        notebook.add(items_frame, text="Items")
-        self.setup_items_tab(items_frame)
-        
-        # Aba Options
-        options_frame = ttk.Frame(notebook)
-        notebook.add(options_frame, text="Options")
-        self.setup_options_tab(options_frame)
-        
-        # Aba Party
-        party_frame = ttk.Frame(notebook)
-        notebook.add(party_frame, text="Party")
-        self.setup_party_tab(party_frame)
+        ttk.Button(trainer_btn_frame, text="Add Trainer", command=self.add_trainer).pack(side=tk.LEFT, padx=2)
+        ttk.Button(trainer_btn_frame, text="Remove Trainer", command=self.remove_trainer).pack(side=tk.LEFT, padx=2)
+        ttk.Button(trainer_btn_frame, text="Refresh", command=self.refresh_data).pack(side=tk.LEFT, padx=2)
 
     def setup_trainer_data_tab(self, parent):
-        """Configura a aba de dados do treinador"""
+        """Configura a seção de dados do treinador"""
         # Frame para sprite
         sprite_frame = ttk.LabelFrame(parent, text="Sprite", style="Section.TFrame")
         sprite_frame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         
         # Canvas para mostrar o sprite
-        self.sprite_canvas = tk.Canvas(sprite_frame, width=64, height=64, bg="gray")
+        self.sprite_canvas = tk.Canvas(sprite_frame, width=64, height=64, bg="#F0F0F0")
         self.sprite_canvas.pack(pady=5)
         
         # Combobox para selecionar sprite
@@ -1543,6 +1626,24 @@ class TrainerEditorUI:
         )
         self.trainer_pic_combo.pack(pady=5)
         self.trainer_pic_combo.bind("<<ComboboxSelected>>", self.update_sprite_preview)
+        
+        # Frame para ID do sprite
+        sprite_id_frame = ttk.Frame(sprite_frame)
+        sprite_id_frame.pack(pady=5)
+        
+        ttk.Label(sprite_id_frame, text="Sprite ID:").pack(side=tk.LEFT, padx=5)
+        
+        # Spinbox para o ID do sprite
+        self.sprite_id_spinbox = tk.Spinbox(
+            sprite_id_frame, 
+            from_=0, 
+            to=len(TRAINER_PICS)-1, 
+            width=5,
+            command=self.on_sprite_id_changed
+        )
+        self.sprite_id_spinbox.pack(side=tk.LEFT, padx=5)
+        self.sprite_id_spinbox.bind("<KeyRelease>", self.on_sprite_id_changed)
+        self.sprite_id_spinbox.bind("<ButtonRelease>", self.on_sprite_id_changed)
         
         # Frame para dados básicos
         data_frame = ttk.LabelFrame(parent, text="Trainer Info", style="Section.TFrame")
@@ -1576,16 +1677,31 @@ class TrainerEditorUI:
         ttk.Radiobutton(data_frame, text="Female", variable=self.gender_var, value="2").grid(row=5, column=1, sticky="w")
         
         parent.grid_columnconfigure(1, weight=1)
+    
+    def on_sprite_id_changed(self, event=None):
+        """Quando o ID do sprite é alterado no spinbox"""
+        try:
+            sprite_id = int(self.sprite_id_spinbox.get())
+            # Encontra o nome do sprite correspondente ao ID
+            for sprite_name, sprite_id_value in TRAINER_PICS.items():
+                if sprite_id_value == sprite_id:
+                    self.trainer_pic_combo.set(sprite_name)
+                    self.update_sprite_preview()
+                    break
+        except ValueError:
+            pass
         
     def update_sprite_preview(self, event=None):
-        """Atualiza a visualização do sprite quando selecionado, lendo diretamente da ROM"""
+        """Atualiza a visualização do sprite e o ID quando selecionado"""
         selected_class = self.trainer_pic_combo.get()
         if not selected_class or not self.ROM_PATH or not self.ROM_PATH.exists():
             return
             
-        # Obtém o ID do sprite
+        # Atualiza o spinbox com o ID do sprite
         if selected_class in TRAINER_PICS:
             sprite_id = TRAINER_PICS[selected_class]
+            self.sprite_id_spinbox.delete(0, tk.END)
+            self.sprite_id_spinbox.insert(0, str(sprite_id))
         else:
             return
             
@@ -1625,22 +1741,19 @@ class TrainerEditorUI:
             self.sprite_canvas.create_text(32, 32, text="Sprite\nNot Found", fill="white")
 
     def setup_items_tab(self, parent):
-        """Configura a aba de itens"""
-        items_frame = ttk.LabelFrame(parent, text="Held Items", style="Section.TFrame")
-        items_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
+        """Configura a seção de itens"""
         # Cria 4 comboboxes para itens
         self.item_combos = []
         for i in range(4):
-            ttk.Label(items_frame, text=f"Item {i+1}:").grid(row=i, column=0, padx=5, pady=2, sticky="w")
-            combo = ttk.Combobox(items_frame, values=self.items_list)
+            ttk.Label(parent, text=f"Item {i+1}:").grid(row=i, column=0, padx=5, pady=2, sticky="w")
+            combo = ttk.Combobox(parent, values=self.items_list)
             combo.grid(row=i, column=1, padx=5, pady=2, sticky="ew")
             self.item_combos.append(combo)
         
-        items_frame.grid_columnconfigure(1, weight=1)
+        parent.grid_columnconfigure(1, weight=1)
     
     def setup_options_tab(self, parent):
-        """Configura a aba de opções"""
+        """Configura a seção de opções"""
         # Music
         ttk.Label(parent, text="Music:").grid(row=0, column=0, sticky="w", padx=5, pady=2)
         self.music_combo = ttk.Combobox(parent, values=[opt[1] for opt in MUSIC_OPTIONS])
@@ -1700,37 +1813,43 @@ class TrainerEditorUI:
         # Vincula a função ao evento de digitação
         self.poke_species_combo.bind('<KeyRelease>', autocomplete)
     
+        # Modifique o método setup_party_tab para este layout
     def setup_party_tab(self, parent):
-        """Configura a aba de Pokémon"""
+        """Configura a seção de Pokémon com sprites abaixo da treeview"""
         main_frame = ttk.Frame(parent)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
-        # Frame superior com Party Type
+        # Frame superior com Party Type e botões de ação da party
         top_frame = ttk.Frame(main_frame)
         top_frame.pack(fill=tk.X, padx=5, pady=5)
         
         ttk.Label(top_frame, text="Party Type:").pack(side=tk.LEFT, padx=5)
         
         # Combobox para selecionar o tipo de party
-        self.party_type_combo = ttk.Combobox(top_frame, values=[pt[0] for pt in PARTY_TYPES])
+        self.party_type_combo = ttk.Combobox(top_frame, values=[pt[0] for pt in PARTY_TYPES], width=30)
         self.party_type_combo.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         self.party_type_combo.bind("<<ComboboxSelected>>", self.on_party_type_selected)
         
-        # Frame principal com Treeview e detalhes
-        center_frame = ttk.Frame(main_frame)
-        center_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        # Botões de ação da party (adicionar/remover Pokémon)
+        party_btn_frame = ttk.Frame(top_frame)
+        party_btn_frame.pack(side=tk.RIGHT, padx=5)
         
-        # Treeview para Pokémon
-        tree_frame = ttk.Frame(center_frame)
-        tree_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        ttk.Button(party_btn_frame, text="+ Add Pokémon", command=self.add_pokemon).pack(side=tk.LEFT, padx=2)
+        ttk.Button(party_btn_frame, text="- Remove Pokémon", command=self.remove_pokemon).pack(side=tk.LEFT, padx=2)
         
-        self.party_tree = ttk.Treeview(tree_frame, columns=("Species", "Level", "Item"), show="headings")
+        # Frame principal para lista de Pokémon e sprites (coluna esquerda)
+        left_column_frame = ttk.Frame(main_frame)
+        left_column_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Treeview para Pokémon (apenas Species e Level)
+        tree_frame = ttk.Frame(left_column_frame)
+        tree_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        self.party_tree = ttk.Treeview(tree_frame, columns=("Species", "Level"), show="headings", height=6)
         self.party_tree.heading("Species", text="Species")
         self.party_tree.heading("Level", text="Level")
-        self.party_tree.heading("Item", text="Item")
-        self.party_tree.column("Species", width=120)
-        self.party_tree.column("Level", width=50)
-        self.party_tree.column("Item", width=100)
+        self.party_tree.column("Species", width=150)
+        self.party_tree.column("Level", width=40)
         
         scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.party_tree.yview)
         self.party_tree.configure(yscrollcommand=scrollbar.set)
@@ -1738,77 +1857,120 @@ class TrainerEditorUI:
         self.party_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Frame de edição do Pokémon
-        edit_frame = ttk.LabelFrame(center_frame, text="Pokémon Details", style="Section.TFrame")
-        edit_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=5)
+        # Bind para atualizar automaticamente quando selecionar um Pokémon
+        self.party_tree.bind('<<TreeviewSelect>>', self.on_pokemon_selected)
         
-        # Frame rolável para os detalhes
-        canvas = tk.Canvas(edit_frame)
-        scrollbar = ttk.Scrollbar(edit_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        # Frame para os sprites dos Pokémon (abaixo da treeview) - SEM BORDA
+        sprite_frame = ttk.Frame(left_column_frame)
+        sprite_frame.pack(fill=tk.X, padx=5, pady=(0, 5))
         
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(
-                scrollregion=canvas.bbox("all")
-            )
-        )
+        # Cria 6 frames para os sprites em uma única linha - SEM BORDA E SEM TEXTO
+        sprite_row_frame = ttk.Frame(sprite_frame)
+        sprite_row_frame.pack(fill=tk.X)
         
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        self.pokemon_sprite_frames = []
+        self.pokemon_sprite_images = []
+        self.pokemon_sprite_labels = []
         
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        for i in range(6):
+            # Frame sem borda, sem relief e sem label
+            frame = ttk.Frame(sprite_row_frame, width=64, height=64)
+            frame.pack(side=tk.LEFT, padx=2)
+            frame.pack_propagate(False)
+            
+            # Canvas para o sprite - fundo branco sem borda
+            canvas = tk.Canvas(frame, width=64, height=64, bg="#F0F0F0", highlightthickness=0)
+            canvas.pack(fill=tk.BOTH, expand=True)
+            
+            # Canvas inicialmente vazio (sem texto "No Pokémon" e sem label)
+            
+            self.pokemon_sprite_images.append(None)
+            self.pokemon_sprite_labels.append((canvas, None))  # Sem label
+            self.pokemon_sprite_frames.append(frame)
         
-        # Species
-        ttk.Label(scrollable_frame, text="Species:").grid(row=0, column=0, sticky="w", padx=5, pady=2)
-        self.poke_species_combo = ttk.Combobox(scrollable_frame, values=self.species_display_list)
+        # Frame de edição do Pokémon (direita - mantendo o layout original)
+        edit_frame = ttk.LabelFrame(main_frame, text="Pokémon Details", style="Section.TFrame")
+        edit_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # ... (o resto do código de edição permanece EXATAMENTE igual)
+        # Configura grid com 4 colunas para organizar os campos em pares
+        for i in range(4):
+            edit_frame.grid_columnconfigure(i, weight=1)
+        
+        # Linha 0: Species - Level
+        ttk.Label(edit_frame, text="Species:").grid(row=0, column=0, sticky="w", padx=5, pady=2)
+        self.poke_species_combo = ttk.Combobox(edit_frame, values=self.species_display_list, width=12)
         self.poke_species_combo.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
+        self.poke_species_combo.bind("<<ComboboxSelected>>", self.on_pokemon_field_changed)
+        
+        ttk.Label(edit_frame, text="Level:").grid(row=0, column=2, sticky="w", padx=5, pady=2)
+        self.poke_level_entry = ttk.Entry(edit_frame, width=3)
+        self.poke_level_entry.grid(row=0, column=3, sticky="w", padx=5, pady=2)
+        self.poke_level_entry.bind("<KeyRelease>", self.on_pokemon_field_changed)
         
         # Configura o auto-complete
         self.setup_species_autocomplete()
         
-        # Level
-        ttk.Label(scrollable_frame, text="Level:").grid(row=1, column=0, sticky="w", padx=5, pady=2)
-        self.poke_level_entry = ttk.Entry(scrollable_frame)
-        self.poke_level_entry.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
+        # Linha 1: Held Item - Ability
+        ttk.Label(edit_frame, text="Held Item:").grid(row=1, column=0, sticky="w", padx=5, pady=2)
+        self.poke_item_combo = ttk.Combobox(edit_frame, values=self.items_list, width=12)
+        self.poke_item_combo.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
+        self.poke_item_combo.bind("<<ComboboxSelected>>", self.on_pokemon_field_changed)
         
-        # Held Item
-        ttk.Label(scrollable_frame, text="Held Item:").grid(row=2, column=0, sticky="w", padx=5, pady=2)
-        self.poke_item_combo = ttk.Combobox(scrollable_frame, values=self.items_list)
-        self.poke_item_combo.grid(row=2, column=1, sticky="ew", padx=5, pady=2)
-        
-        # Moves (só aparece para tipos 3 e 4)
-        self.move_labels = []
-        self.move_combos = []
-        for i in range(4):
-            label = ttk.Label(scrollable_frame, text=f"Move {i+1}:")
-            label.grid(row=3+i, column=0, sticky="w", padx=5, pady=2)
-            combo = ttk.Combobox(scrollable_frame, values=self.moves_list)
-            combo.grid(row=3+i, column=1, sticky="ew", padx=5, pady=2)
-            self.move_labels.append(label)
-            self.move_combos.append(combo)
-        
-        # Ability (só aparece para tipo 4)
-        self.ability_label = ttk.Label(scrollable_frame, text="Ability:")
-        self.ability_label.grid(row=7, column=0, sticky="w", padx=5, pady=2)
-        self.ability_combo = ttk.Combobox(scrollable_frame, values=ABILITY_OPTIONS)
-        self.ability_combo.grid(row=7, column=1, sticky="ew", padx=5, pady=2)
+        self.ability_label = ttk.Label(edit_frame, text="Ability:")
+        self.ability_label.grid(row=1, column=2, sticky="w", padx=5, pady=2)
+        self.ability_combo = ttk.Combobox(edit_frame, values=ABILITY_OPTIONS, width=16)
+        self.ability_combo.grid(row=1, column=3, sticky="ew", padx=5, pady=2)
         self.ability_combo.set("Ability_1")
+        self.ability_combo.bind("<<ComboboxSelected>>", self.on_pokemon_field_changed)
         
-        # Nature (só aparece para tipo 4)
-        self.nature_label = ttk.Label(scrollable_frame, text="Nature:")
-        self.nature_label.grid(row=8, column=0, sticky="w", padx=5, pady=2)
-        self.nature_combo = ttk.Combobox(scrollable_frame, values=NATURES)
-        self.nature_combo.grid(row=8, column=1, sticky="ew", padx=5, pady=2)
+        # Linha 2: Move 1 - Move 2
+        ttk.Label(edit_frame, text="Move 1:").grid(row=2, column=0, sticky="w", padx=5, pady=2)
+        self.move_combo1 = ttk.Combobox(edit_frame, values=self.moves_list, width=12)
+        self.move_combo1.grid(row=2, column=1, sticky="ew", padx=5, pady=2)
+        self.move_combo1.bind("<<ComboboxSelected>>", self.on_pokemon_field_changed)
+        
+        ttk.Label(edit_frame, text="Move 2:").grid(row=2, column=2, sticky="w", padx=5, pady=2)
+        self.move_combo2 = ttk.Combobox(edit_frame, values=self.moves_list, width=12)
+        self.move_combo2.grid(row=2, column=3, sticky="ew", padx=5, pady=2)
+        self.move_combo2.bind("<<ComboboxSelected>>", self.on_pokemon_field_changed)
+        
+        # Linha 3: Move 3 - Move 4
+        ttk.Label(edit_frame, text="Move 3:").grid(row=3, column=0, sticky="w", padx=5, pady=2)
+        self.move_combo3 = ttk.Combobox(edit_frame, values=self.moves_list, width=12)
+        self.move_combo3.grid(row=3, column=1, sticky="ew", padx=5, pady=2)
+        self.move_combo3.bind("<<ComboboxSelected>>", self.on_pokemon_field_changed)
+        
+        ttk.Label(edit_frame, text="Move 4:").grid(row=3, column=2, sticky="w", padx=5, pady=2)
+        self.move_combo4 = ttk.Combobox(edit_frame, values=self.moves_list, width=12)
+        self.move_combo4.grid(row=3, column=3, sticky="ew", padx=5, pady=2)
+        self.move_combo4.bind("<<ComboboxSelected>>", self.on_pokemon_field_changed)
+        
+        # Atualiza as listas de move_combos
+        self.move_combos = [self.move_combo1, self.move_combo2, self.move_combo3, self.move_combo4]
+        self.move_labels = []
+        
+        # Linha 4: Nature - Tera Type
+        self.nature_label = ttk.Label(edit_frame, text="Nature:")
+        self.nature_label.grid(row=4, column=0, sticky="w", padx=5, pady=2)
+        self.nature_combo = ttk.Combobox(edit_frame, values=NATURES)
+        self.nature_combo.grid(row=4, column=1, sticky="ew", padx=5, pady=2)
         self.nature_combo.set("HARDY")
+        self.nature_combo.bind("<<ComboboxSelected>>", self.on_pokemon_field_changed)
         
-        # IVs (só aparece para tipo 4)
-        self.iv_label = ttk.Label(scrollable_frame, text="IVs (0-31):")
-        self.iv_label.grid(row=9, column=0, sticky="w", padx=5, pady=2)
+        self.tera_label = ttk.Label(edit_frame, text="Tera Type:")
+        self.tera_label.grid(row=4, column=2, sticky="w", padx=5, pady=2)
+        self.tera_combo = ttk.Combobox(edit_frame, values=TERA_TYPES, width=12)
+        self.tera_combo.grid(row=4, column=3, sticky="ew", padx=5, pady=2)
+        self.tera_combo.set("TYPE_NORMAL")
+        self.tera_combo.bind("<<ComboboxSelected>>", self.on_pokemon_field_changed)
         
-        iv_frame = ttk.Frame(scrollable_frame)
-        iv_frame.grid(row=9, column=1, sticky="ew", padx=5, pady=2)
+        # Linha 5: IVs (ocupando toda a linha)
+        self.iv_label = ttk.Label(edit_frame, text="IVs (0-31):")
+        self.iv_label.grid(row=5, column=0, columnspan=4, sticky="w", padx=5, pady=2)
+        
+        iv_frame = ttk.Frame(edit_frame)
+        iv_frame.grid(row=6, column=0, columnspan=4, sticky="ew", padx=5, pady=2)
         
         self.iv_entries = []
         for i in range(6):
@@ -1816,14 +1978,15 @@ class TrainerEditorUI:
             entry['validatecommand'] = (entry.register(self.validate_iv_entry), '%P')
             entry.insert(0, "0")
             entry.pack(side=tk.LEFT, padx=2)
+            entry.bind("<KeyRelease>", self.on_pokemon_field_changed)
             self.iv_entries.append(entry)
         
-        # EVs (só aparece para tipo 4)
-        self.ev_label = ttk.Label(scrollable_frame, text="EVs (0-255):")
-        self.ev_label.grid(row=10, column=0, sticky="w", padx=5, pady=2)
+        # Linha 7: EVs (ocupando toda a linha)
+        self.ev_label = ttk.Label(edit_frame, text="EVs (0-255):")
+        self.ev_label.grid(row=5, column=2, columnspan=4, sticky="w", padx=5, pady=2)
         
-        ev_frame = ttk.Frame(scrollable_frame)
-        ev_frame.grid(row=10, column=1, sticky="ew", padx=5, pady=2)
+        ev_frame = ttk.Frame(edit_frame)
+        ev_frame.grid(row=6, column=2, columnspan=4, sticky="ew", padx=5, pady=2)
         
         self.ev_entries = []
         for i in range(6):
@@ -1831,6 +1994,7 @@ class TrainerEditorUI:
             entry['validatecommand'] = (entry.register(self.validate_ev_entry), '%P')
             entry.insert(0, "0")
             entry.pack(side=tk.LEFT, padx=2)
+            entry.bind("<KeyRelease>", self.on_pokemon_field_changed)
             self.ev_entries.append(entry)
 
         # Adiciona trace para verificar o total de EVs
@@ -1838,29 +2002,265 @@ class TrainerEditorUI:
             entry.bind('<FocusOut>', self.check_ev_total)
             entry.bind('<KeyRelease>', self.check_ev_total)
         
-        # Tera Type (só aparece para tipo 4)
-        self.tera_label = ttk.Label(scrollable_frame, text="Tera Type:")
-        self.tera_label.grid(row=11, column=0, sticky="w", padx=5, pady=2)
-        self.tera_combo = ttk.Combobox(scrollable_frame, values=TERA_TYPES)
-        self.tera_combo.grid(row=11, column=1, sticky="ew", padx=5, pady=2)
-        self.tera_combo.set("TYPE_NORMAL")
+        # Botão de edição
+        edit_btn_frame = ttk.Frame(edit_frame)
+        edit_btn_frame.grid(row=9, column=0, columnspan=4, pady=10)
         
-        # Configura o grid para expandir
-        scrollable_frame.grid_columnconfigure(1, weight=1)
+        self.edit_button = ttk.Button(edit_btn_frame, text="Apply Changes", command=self.apply_pokemon_changes)
+        self.edit_button.pack(side=tk.LEFT, padx=5)
         
-        # Botões de ação
-        btn_frame = ttk.Frame(main_frame)
-        btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        
-        ttk.Button(btn_frame, text="+ Add", command=self.add_pokemon).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="- Remove", command=self.remove_pokemon).pack(side=tk.LEFT, padx=2)
-        self.edit_button = ttk.Button(btn_frame, text="Edit", command=self.toggle_edit_pokemon)
-        self.edit_button.pack(side=tk.LEFT, padx=2)
-        self.party_tree.bind('<Double-1>', self.edit_pokemon)
+        self.party_tree.bind('<Double-1>', self.on_pokemon_selected)
         
         # Define o tipo de party padrão
         self.party_type_combo.current(3)  # ItemCustomMoves
         self.update_party_fields()
+        
+        # Variável para controlar o Pokémon atual sendo editado
+        self.current_pokemon_item = None
+    
+    def update_pokemon_sprites(self):
+        """Atualiza a exibição dos sprites dos Pokémon baseado na party atual"""
+        # Limpa todos os sprites atuais (apenas deixa o canvas vazio)
+        for canvas, label in self.pokemon_sprite_labels:
+            canvas.delete("all")
+        
+        # Atualiza os sprites para cada slot da party
+        children = self.party_tree.get_children()
+        for i, child in enumerate(children):
+            if i >= 6:  # Máximo de 6 Pokémon
+                break
+                
+            values = self.party_tree.item(child)['values']
+            species_display_name = values[0].upper() if values else ""
+            
+            # Encontra o índice da espécie usando o mapeamento
+            species_index = -1
+            species_clean_name = species_display_name
+            
+            # Primeiro tenta encontrar pelo nome limpo (ex: POLIWAG)
+            if species_clean_name in self.species_name_to_index:
+                species_index = self.species_name_to_index[species_clean_name]
+            else:
+                # Se não encontrou, procura no mapeamento reverso
+                for name, idx in self.species_name_to_index.items():
+                    if name.upper() == species_clean_name:
+                        species_index = idx
+                        break
+            
+            if species_index > 0:
+                # Verifica se o índice está dentro dos limites válidos das tabelas
+                if (species_index < len(self.pokemon_sprite_addresses) and
+                    species_index < len(self.pokemon_palette_addresses)):
+                    
+                    # Verifica se os endereços são válidos (não zero)
+                    sprite_addr = self.pokemon_sprite_addresses[species_index]
+                    palette_addr = self.pokemon_palette_addresses[species_index]
+                    
+                    if sprite_addr != 0 and palette_addr != 0:
+                        self.load_pokemon_sprite(i, species_index)
+                    else:
+                        print(f"Skipping species {species_index} - addresses are zero")
+                        # Não carrega nada (mantém o canvas vazio)
+                else:
+                    print(f"Species index {species_index} out of range")
+
+    def load_pokemon_sprite(self, slot_index, species_index):
+        """Carrega e exibe o sprite de um Pokémon específico usando o índice de species.h"""
+        # Verificação adicional de segurança
+        if (species_index <= 0 or 
+            species_index >= len(self.pokemon_sprite_addresses) or 
+            species_index >= len(self.pokemon_palette_addresses)):
+            print(f"Species index {species_index} out of range")
+            return
+        
+        sprite_addr = self.pokemon_sprite_addresses[species_index]
+        palette_addr = self.pokemon_palette_addresses[species_index]
+        
+        # Verifica se os endereços são válidos (não zero)
+        if sprite_addr == 0 or palette_addr == 0:
+            print(f"Skipping species {species_index} - addresses are zero")
+            return
+        
+        try:
+            print(f"Loading species {species_index}: sprite=0x{sprite_addr:X}, palette=0x{palette_addr:X}")
+            
+            # Lê os dados do sprite
+            sprite_data = self.read_sprite_data(sprite_addr)
+            if not sprite_data:
+                print(f"Failed to read sprite data at 0x{sprite_addr:X}")
+                return
+            
+            # Lê a paleta
+            palette = self.read_palette(palette_addr)
+            if not palette:
+                print(f"Failed to read palette at 0x{palette_addr:X}")
+                palette = [(0, 0, 0, 0)] * 16
+            
+            # Converte para imagem
+            img = self.decode_4bpp_tiled(sprite_data, palette)
+            img = img.resize((64, 64), Image.Resampling.NEAREST)
+            
+            # Converte para PhotoImage e armazena
+            tk_img = ImageTk.PhotoImage(img)
+            self.pokemon_sprite_images[slot_index] = tk_img  # Mantém referência
+            
+            # Atualiza o canvas
+            canvas, label = self.pokemon_sprite_labels[slot_index]
+            canvas.delete("all")
+            canvas.create_image(0, 0, anchor=tk.NW, image=tk_img)
+            
+        except Exception as e:
+            print(f"Error loading Pokémon sprite for species {species_index}: {e}")
+            canvas, label = self.pokemon_sprite_labels[slot_index]
+            canvas.delete("all")
+            
+    def load_species_mapping(self):
+        """Carrega o mapeamento de nomes de espécies para seus valores numéricos"""
+        self.species_name_to_index = {}
+        self.species_index_to_name = {}
+        
+        try:
+            with open(self.SPECIES_PATH, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('#define SPECIES_'):
+                        parts = line.split()
+                        if len(parts) >= 3:
+                            species_name = parts[1]  # Ex: SPECIES_POLIWAG
+                            value_str = parts[2]
+                            
+                            # Remove prefixo SPECIES_
+                            clean_name = species_name.replace('SPECIES_', '')
+                            
+                            # Converte o valor (pode ser hex 0x3C ou decimal 60)
+                            if value_str.startswith('0x'):
+                                species_index = int(value_str[2:], 16)
+                            else:
+                                species_index = int(value_str)
+                            
+                            self.species_name_to_index[clean_name] = species_index
+                            self.species_index_to_name[species_index] = clean_name
+                            
+            print(f"Loaded {len(self.species_name_to_index)} species mappings")
+            
+        except Exception as e:
+            print(f"Error loading species mapping: {e}")
+            # Fallback básico
+            self.species_name_to_index = {'BULBASAUR': 1, 'CHARMANDER': 4, 'SQUIRTLE': 7}
+            self.species_index_to_name = {1: 'BULBASAUR', 4: 'CHARMANDER', 7: 'SQUIRTLE'}    
+        
+    def on_pokemon_selected(self, event=None):
+        """Quando um Pokémon é selecionado na lista"""
+        selected = self.party_tree.selection()
+        if selected:
+            self.current_pokemon_item = selected[0]
+            self.load_pokemon_for_editing_preview(selected[0])
+            self.update_pokemon_sprites()  # Atualiza o destaque dos sprites
+
+    def on_pokemon_field_changed(self, event=None):
+        """Quando um campo do Pokémon é modificado, atualiza automaticamente"""
+        if self.current_pokemon_item and not self.editing_pokemon_mode:
+            self.apply_pokemon_changes()
+
+    def apply_pokemon_changes(self):
+        """Aplica as mudanças do Pokémon atual"""
+        if not self.current_pokemon_item:
+            return
+        
+        # Coleta os valores atuais dos campos
+        species = self.poke_species_combo.get()
+        level = self.poke_level_entry.get()
+        
+        if not species or not level.isdigit():
+            return
+        
+        # Prepara os novos valores para a treeview (apenas Species e Level)
+        new_values = [species.upper(), level]
+        
+        # Atualiza o item na treeview
+        self.party_tree.item(self.current_pokemon_item, values=new_values)
+        
+        # Atualiza também na estrutura de dados da party
+        self.update_party_data_structure()
+        
+        # Marca como modificado
+        self.modified = True
+
+    def update_party_data_structure(self):
+        """Atualiza a estrutura de dados interna da party com os valores atuais"""
+        if not self.current_pokemon_item or not self.current_editing_id:
+            return
+        
+        # Encontra o treinador atual
+        trainer_name = None
+        for name, data in self.trainers.items():
+            if data['id'] == self.current_editing_id:
+                trainer_name = name
+                break
+        
+        if not trainer_name:
+            return
+        
+        # Encontra la party correspondente
+        party_name = self.trainers[trainer_name].get('party_name')
+        if not party_name:
+            return
+        
+        # Encontra a party nos dados
+        party_data = self.parties.get(party_name) or self.new_parties.get(party_name)
+        if not party_data:
+            return
+        
+        # Encontra o índice do Pokémon sendo editado
+        pokemon_index = self.party_tree.index(self.current_pokemon_item)
+        if pokemon_index >= len(party_data.get('pokemons', [])):
+            return
+        
+        # Atualiza os dados do Pokémon com os valores atuais dos campos
+        pokemon = party_data['pokemons'][pokemon_index]
+        
+        # Dados básicos
+        pokemon['species'] = f"SPECIES_{self.poke_species_combo.get().upper()}"
+        pokemon['level'] = self.poke_level_entry.get()
+        
+        # Item
+        party_type = self.party_type_var.get()
+        if party_type in [2, 4]:
+            item = self.poke_item_combo.get()
+            pokemon['item'] = f"ITEM_{item.upper()}" if item else "ITEM_NONE"
+        
+        # Movimentos
+        if party_type in [3, 4]:
+            moves = []
+            for combo in self.move_combos:
+                move = combo.get()
+                moves.append(f"MOVE_{move.upper()}" if move else "MOVE_NONE")
+            pokemon['moves'] = moves
+        
+        # Dados avançados
+        if party_type == 4:
+            # Ability
+            pokemon['ability'] = self.ability_combo.get()
+            
+            # Nature
+            pokemon['nature'] = f"NATURE_{self.nature_combo.get()}"
+            
+            # IVs
+            ivs = []
+            for entry in self.iv_entries:
+                value = entry.get().strip()
+                ivs.append(value if value.isdigit() else "0")
+            pokemon['ivs'] = ivs
+            
+            # EVs
+            evs = []
+            for entry in self.ev_entries:
+                value = entry.get().strip()
+                evs.append(value if value.isdigit() else "0")
+            pokemon['evs'] = evs
+            
+            # Tera Type
+            pokemon['tera_type'] = self.tera_combo.get()
         
     def toggle_edit_pokemon(self):
         """Alterna entre modo de edição e visualização"""
@@ -1980,51 +2380,6 @@ class TrainerEditorUI:
         # Auto-refresh e feedback
         messagebox.showinfo("Success", "Pokémon updated successfully!")
         self.modified = True
-
-    def update_party_data_structure(self, new_values):
-        """Atualiza a estrutura de dados interna da party"""
-        if not self.current_editing_id:
-            return
-        
-        # Encontra o treinador atual
-        trainer_name = None
-        for name, data in self.trainers.items():
-            if data['id'] == self.current_editing_id:
-                trainer_name = name
-                break
-        
-        if not trainer_name:
-            return
-        
-        # Encontra a party correspondente
-        party_name = self.trainers[trainer_name].get('party_name')
-        if not party_name:
-            return
-        
-        # Encontra a party nos dados
-        party_data = self.parties.get(party_name) or self.new_parties.get(party_name)
-        if not party_data:
-            return
-        
-        # Encontra o índice do Pokémon sendo editado
-        pokemon_index = self.party_tree.index(self.current_editing_pokemon)
-        if pokemon_index >= len(party_data.get('pokemons', [])):
-            return
-        
-        # Atualiza os dados do Pokémon
-        pokemon = party_data['pokemons'][pokemon_index]
-        pokemon['species'] = f"SPECIES_{new_values[0]}"
-        pokemon['level'] = new_values[1]
-        
-        # Atualiza item se necessário
-        if len(new_values) > 2 and 'item' in pokemon:
-            pokemon['item'] = f"ITEM_{new_values[2]}"
-        
-        # Atualiza movimentos se necessário
-        if len(new_values) > 3 and 'moves' in pokemon:
-            for i in range(4):
-                if 3 + i < len(new_values):
-                    pokemon['moves'][i] = f"MOVE_{new_values[3 + i]}"
         
     def validate_iv_entry(self, new_value):
         """Valida a entrada de IV (0-31, máximo 2 caracteres)"""
@@ -2039,7 +2394,7 @@ class TrainerEditorUI:
         return True
 
     def validate_ev_entry(self, new_value):
-        """Valida a entrada de EV (0-252, máximo 3 caracteres)"""
+        """Valida la entrada de EV (0-252, máximo 3 caracteres)"""
         if not new_value:  # Permite campo vazio temporariamente
             return True
         if not new_value.isdigit():
@@ -2072,15 +2427,6 @@ class TrainerEditorUI:
             entry.config(foreground='black')
         return True
     
-    def setup_bottom_buttons(self):
-        """Configura os botões inferiores"""
-        btn_frame = ttk.Frame(self.root)
-        btn_frame.pack(fill=tk.X, pady=5)
-        
-        ttk.Button(btn_frame, text="Save Trainer", command=self.save_trainer).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Save All Files", command=self.save_files).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.root.quit).pack(side=tk.RIGHT, padx=5)
-    
     def on_party_type_selected(self, event):
         """Atualiza o tipo de party quando selecionado no combobox"""
         selected = self.party_type_combo.current()
@@ -2098,34 +2444,20 @@ class TrainerEditorUI:
         
         # Atualiza os campos de movimento
         for label, combo in zip(self.move_labels, self.move_combos):
-            label.grid_remove()
-            combo.grid_remove()
-        
-        if show_moves:
-            for i, (label, combo) in enumerate(zip(self.move_labels, self.move_combos)):
-                label.grid(row=3+i, column=0, sticky="w", padx=5, pady=2)
-                combo.grid(row=3+i, column=1, sticky="ew", padx=5, pady=2)
+            if show_moves:
+                label.grid()
+                combo.grid()
+            else:
+                label.grid_remove()
+                combo.grid_remove()
         
         # Atualiza o campo de item
         if show_item:
-            self.poke_item_combo.grid(row=2, column=0, columnspan=2, sticky="ew", padx=5, pady=2)
+            self.poke_item_combo.grid()
         else:
             self.poke_item_combo.grid_remove()
         
         # Atualiza os campos avançados
-        self.ability_label.grid_remove()
-        self.ability_combo.grid_remove()
-        self.nature_label.grid_remove()
-        self.nature_combo.grid_remove()
-        self.iv_label.grid_remove()
-        for entry in self.iv_entries:
-            entry.master.grid_remove()
-        self.ev_label.grid_remove()
-        for entry in self.ev_entries:
-            entry.master.grid_remove()
-        self.tera_label.grid_remove()
-        self.tera_combo.grid_remove()
-        
         if show_advanced:
             self.ability_label.grid()
             self.ability_combo.grid()
@@ -2139,6 +2471,19 @@ class TrainerEditorUI:
                 entry.master.grid()
             self.tera_label.grid()
             self.tera_combo.grid()
+        else:
+            self.ability_label.grid_remove()
+            self.ability_combo.grid_remove()
+            self.nature_label.grid_remove()
+            self.nature_combo.grid_remove()
+            self.iv_label.grid_remove()
+            for entry in self.iv_entries:
+                entry.master.grid_remove()
+            self.ev_label.grid_remove()
+            for entry in self.ev_entries:
+                entry.master.grid_remove()
+            self.tera_label.grid_remove()
+            self.tera_combo.grid_remove()
     
     def on_class_selected(self, event):
         """Quando uma classe é selecionada, atualiza o sprite e o ID"""
@@ -2252,6 +2597,13 @@ class TrainerEditorUI:
             elif '.trainerPic' in line:
                 pic_name = line.split('=')[1].strip(' ,').replace('TRAINER_PIC_', '')
                 self.trainer_pic_combo.set(pic_name)
+                
+                # Atualiza o ID do sprite também
+                if pic_name in TRAINER_PICS:
+                    sprite_id = TRAINER_PICS[pic_name]
+                    self.sprite_id_spinbox.delete(0, tk.END)
+                    self.sprite_id_spinbox.insert(0, str(sprite_id))
+                
                 self.update_sprite_preview()
         
         # Carrega a party se encontrou o nome
@@ -2308,10 +2660,14 @@ class TrainerEditorUI:
         # Atualiza os campos visíveis
         self.update_party_fields()
         
+        # Atualiza os sprites após carregar a party
+        self.update_pokemon_sprites()
+        
         # Se houver Pokémon selecionado, carrega seus detalhes
         if self.party_tree.get_children():
             self.party_tree.selection_set(self.party_tree.get_children()[0])
-            self.edit_pokemon(party_type)  # Passa o party_type como argumento
+            # Chama o método correto para carregar os detalhes
+            self.load_pokemon_for_editing_preview(self.party_tree.get_children()[0])
     
     def load_ai_flags(self, flags_str):
         """Carrega as flags AI nos checkboxes usando os nomes das flags"""
@@ -2415,30 +2771,23 @@ class TrainerEditorUI:
         """Adiciona um novo Pokémon ao time"""
         species = self.poke_species_combo.get()
         level = self.poke_level_entry.get()
-        item = self.poke_item_combo.get()
         
         if not species or not level.isdigit():
             messagebox.showerror("Error", "Species and Level are required")
             return
         
-        # Verifica se o item é necessário para o tipo de party selecionado
-        party_type = self.party_type_var.get()
-        if party_type in [2, 4] and not item:
-            item = "NONE"
-
-        # Coleta os movimentos
-        moves = []
-        for combo in self.move_combos:
-            move = combo.get()
-            moves.append(move.upper() if move else "NONE")
-        
-        # Adiciona ao treeview com os movimentos
-        self.party_tree.insert('', tk.END, values=(
+        # Adiciona ao treeview (apenas Species e Level)
+        item_id = self.party_tree.insert('', tk.END, values=(
             species.upper(),
-            level,
-            item.upper() if item else "NONE",
-            *moves  # Inclui os 4 movimentos nos valores
+            level
         ))
+        
+        # Seleciona o novo Pokémon
+        self.party_tree.selection_set(item_id)
+        self.current_pokemon_item = item_id
+        
+        # Atualiza os sprites
+        self.update_pokemon_sprites()
         
         # Limpa os campos após adicionar
         self.poke_species_combo.set('')
@@ -2447,6 +2796,9 @@ class TrainerEditorUI:
         
         for combo in self.move_combos:
             combo.set('')
+        
+        # Marca como modificado
+        self.modified = True
     
     def edit_pokemon(self, event=None):
         """Handler para quando um Pokémon é selecionado (double-click ou seleção)"""
@@ -2456,23 +2808,90 @@ class TrainerEditorUI:
                 self.load_pokemon_for_editing_preview(selected[0])
                 
     def load_pokemon_for_editing_preview(self, item_id):
-        """Apenas carrega os dados para preview, não entra em modo de edição"""
+        """Carrega os dados do Pokémon selecionado para visualização/edição"""
         item = self.party_tree.item(item_id)
         values = item['values']
         
-        # Apenas preenche os campos para visualização
+        # Preenche os campos básicos
         self.poke_species_combo.set(values[0])
         self.poke_level_entry.delete(0, tk.END)
         self.poke_level_entry.insert(0, values[1])
         
-        if len(values) > 2:
-            self.poke_item_combo.set(values[2])
+        # Para carregar os dados completos, precisamos acessar a estrutura de dados da party
+        if self.current_editing_id:
+            # Encontra o treinador atual
+            trainer_name = None
+            for name, data in self.trainers.items():
+                if data['id'] == self.current_editing_id:
+                    trainer_name = name
+                    break
+            
+            if trainer_name:
+                # Encontra la party correspondente
+                party_name = self.trainers[trainer_name].get('party_name')
+                if party_name:
+                    # Encontra a party nos dados
+                    party_data = self.parties.get(party_name) or self.new_parties.get(party_name)
+                    if party_data:
+                        # Encontra o índice do Pokémon sendo editado
+                        pokemon_index = self.party_tree.index(item_id)
+                        if pokemon_index < len(party_data.get('pokemons', [])):
+                            pokemon = party_data['pokemons'][pokemon_index]
+                            
+                            # Carrega dados avançados se existirem
+                            if 'item' in pokemon:
+                                item_name = pokemon['item'].replace('ITEM_', '')
+                                self.poke_item_combo.set(item_name)
+                            
+                            if 'ability' in pokemon:
+                                self.ability_combo.set(pokemon['ability'])
+                            
+                            if 'nature' in pokemon:
+                                nature = pokemon['nature'].replace('NATURE_', '')
+                                self.nature_combo.set(nature)
+                            
+                            if 'ivs' in pokemon:
+                                # ivs pode ser uma string ou lista
+                                if isinstance(pokemon['ivs'], str):
+                                    # Se for string, divide por vírgulas
+                                    iv_values = [v.strip() for v in pokemon['ivs'].split(',')]
+                                else:
+                                    iv_values = pokemon['ivs']
+                                
+                                for i, iv_value in enumerate(iv_values[:6]):
+                                    if i < len(self.iv_entries):
+                                        self.iv_entries[i].delete(0, tk.END)
+                                        self.iv_entries[i].insert(0, iv_value)
+                            
+                            if 'evs' in pokemon:
+                                # evs pode ser uma string ou lista
+                                if isinstance(pokemon['evs'], str):
+                                    # Se for string, divide por vírgulas
+                                    ev_values = [v.strip() for v in pokemon['evs'].split(',')]
+                                else:
+                                    ev_values = pokemon['evs']
+                                
+                                for i, ev_value in enumerate(ev_values[:6]):
+                                    if i < len(self.ev_entries):
+                                        self.ev_entries[i].delete(0, tk.END)
+                                        self.ev_entries[i].insert(0, ev_value)
+                            
+                            if 'tera_type' in pokemon:
+                                self.tera_combo.set(pokemon['tera_type'])
+                            
+                            # Carrega movimentos se existirem
+                            if 'moves' in pokemon:
+                                for i, move in enumerate(pokemon['moves'][:4]):
+                                    if i < len(self.move_combos):
+                                        move_name = move.replace('MOVE_', '')
+                                        self.move_combos[i].set(move_name)
     
     def remove_pokemon(self):
         """Remove o Pokémon selecionado"""
         selected = self.party_tree.selection()
         if selected:
             self.party_tree.delete(selected[0])
+            self.update_pokemon_sprites()  # Atualiza os sprites
     
     def save_trainer(self):
         """Salva o treinador atual"""
