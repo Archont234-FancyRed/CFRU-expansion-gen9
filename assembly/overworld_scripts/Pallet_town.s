@@ -116,7 +116,6 @@ EventScript_ChangeTeraTypeNPCSelected:
         case 15, EventScript_ChangeTeraTypeNPC_SetDragon
         case 16, EventScript_ChangeTeraTypeNPC_SetDark
         case 17, EventScript_ChangeTeraTypeNPC_SetFairy
-        case 18, EventScript_ChangeTeraTypeNPC_SetStellar
         case 0x7F, EventScript_ChangeTeraTypeNPCNo
 
 
@@ -264,13 +263,6 @@ EventScript_ChangeTeraTypeNPC_SetFairy:
     release
     end
 
-EventScript_ChangeTeraTypeNPC_SetStellar:
-    setvar 0x8001 TYPE_STELLAR
-    callasm ChangeTeraTypeInOW
-    buffernumber 0x1 0x4001
-    msgbox gText_ChangeTeraTypeNPCFetchTeraStellar MSG_NORMAL
-    release
-    end
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 EventScript_Pallet_AideGuy:

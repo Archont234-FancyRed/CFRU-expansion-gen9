@@ -75,7 +75,6 @@ const u16 gTeraBlendColors[] =
     [TYPE_DARK]     = RGB(5, 5, 5),     // Black
     [TYPE_FAIRY]    = RGB(31, 18, 24),  // Rose Pink
     [TYPE_BLANK]    = RGB(31, 31, 31),  // White
-    [TYPE_STELLAR]  = RGB(28, 28, 31),  // Still unsure - Gave it a Silvery Blue Tint
 };
 
 // Check if the Pokemon has terastallized or not
@@ -161,7 +160,6 @@ static const u8 *const sTypeNames[NUMBER_OF_MON_TYPES] =
     [TYPE_DARK]     = sText_Dark,
     [TYPE_STEEL]    = sText_Steel,
     [TYPE_FAIRY]    = sText_Fairy,
-    [TYPE_STELLAR]   = sText_Stellar,
 };
 
 // Main Function - Try type changes
@@ -183,8 +181,7 @@ u8 *DoTerastallize(u8 bank)
         gBattleScripting.bank = bank;
 
         // Because Stellar Tera Defensive Typing remains same
-        if (teraType != TYPE_STELLAR)
-            SET_BATTLER_TYPE(bank, teraType);
+        SET_BATTLER_TYPE(bank, teraType);
         GetSpeciesName(gStringVar1, species);
         StringCopy(gStringVar2, sTypeNames[teraType]);
 
@@ -432,7 +429,6 @@ enum {
     TAG_TERA_TYPE_ICON_DRAGON,
     TAG_TERA_TYPE_ICON_DARK,
     TAG_TERA_TYPE_ICON_FAIRY,
-    TAG_TERA_TYPE_ICON_STELLAR,
 };
 
 extern const u8 gTeraTypeIcon_NormalTiles[];
@@ -454,7 +450,6 @@ extern const u8 gTeraTypeIcon_IceTiles[];
 extern const u8 gTeraTypeIcon_DragonTiles[];
 extern const u8 gTeraTypeIcon_DarkTiles[];
 extern const u8 gTeraTypeIcon_FairyTiles[];
-extern const u8 gTeraTypeIcon_StellarTiles[];
 
 static const struct SpriteSheet gTeraTypeIcon_NormalSummarySpriteSheet = {gTeraTypeIcon_NormalTiles, 4 * 2 * 32 * NUMBER_OF_MON_TYPES, TAG_TERA_TYPE_ICON_NORMAL};
 static const struct SpriteSheet gTeraTypeIcon_FightingSummarySpriteSheet = {gTeraTypeIcon_FightingTiles, 4 * 2 * 32 * NUMBER_OF_MON_TYPES, TAG_TERA_TYPE_ICON_FIGHTING};
@@ -474,7 +469,6 @@ static const struct SpriteSheet gTeraTypeIcon_IceSummarySpriteSheet = {gTeraType
 static const struct SpriteSheet gTeraTypeIcon_DragonSummarySpriteSheet = {gTeraTypeIcon_DragonTiles, 4 * 2 * 32 * NUMBER_OF_MON_TYPES, TAG_TERA_TYPE_ICON_DRAGON};
 static const struct SpriteSheet gTeraTypeIcon_DarkSummarySpriteSheet = {gTeraTypeIcon_DarkTiles, 4 * 2 * 32 * NUMBER_OF_MON_TYPES, TAG_TERA_TYPE_ICON_DARK};
 static const struct SpriteSheet gTeraTypeIcon_FairySummarySpriteSheet = {gTeraTypeIcon_FairyTiles, 4 * 2 * 32 * NUMBER_OF_MON_TYPES, TAG_TERA_TYPE_ICON_FAIRY};
-static const struct SpriteSheet gTeraTypeIcon_StellarSummarySpriteSheet = {gTeraTypeIcon_StellarTiles, 4 * 2 * 32 * NUMBER_OF_MON_TYPES, TAG_TERA_TYPE_ICON_STELLAR};
 
 static const struct SpriteSheet *const sTeraTypeIconSheets[NUMBER_OF_MON_TYPES] = {    
     [TYPE_NORMAL]   = &gTeraTypeIcon_NormalSummarySpriteSheet,
@@ -495,7 +489,6 @@ static const struct SpriteSheet *const sTeraTypeIconSheets[NUMBER_OF_MON_TYPES] 
     [TYPE_DRAGON]   = &gTeraTypeIcon_DragonSummarySpriteSheet,
     [TYPE_DARK]     = &gTeraTypeIcon_DarkSummarySpriteSheet,
     [TYPE_FAIRY]    = &gTeraTypeIcon_FairySummarySpriteSheet,
-    [TYPE_STELLAR]  = &gTeraTypeIcon_StellarSummarySpriteSheet,
 };
 
 static const struct SpritePalette sTeraTypeIconPalTemplate =
@@ -711,17 +704,6 @@ const struct SpriteTemplate gTeraTypeIconSpriteTemplate_Fairy =
     .callback = SpriteCallbackDummy,
 };
 
-const struct SpriteTemplate gTeraTypeIconSpriteTemplate_Stellar =
-{
-    .tileTag = TAG_TERA_TYPE_ICON_STELLAR,
-    .paletteTag = TAG_TERA_TYPE_ICON_NORMAL,
-    .oam = &sTeraTypeIconOAM,
-    .anims = gDummySpriteAnimTable,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy,
-};
-
 static const struct SpriteTemplate *const gTeraTypeIconSpriteTemplates[NUMBER_OF_MON_TYPES] =
 {
     [TYPE_NORMAL]   = &gTeraTypeIconSpriteTemplate_Normal,
@@ -742,7 +724,6 @@ static const struct SpriteTemplate *const gTeraTypeIconSpriteTemplates[NUMBER_OF
     [TYPE_DRAGON]   = &gTeraTypeIconSpriteTemplate_Dragon,
     [TYPE_DARK]     = &gTeraTypeIconSpriteTemplate_Dark,
     [TYPE_FAIRY]    = &gTeraTypeIconSpriteTemplate_Fairy,
-    [TYPE_STELLAR]  = &gTeraTypeIconSpriteTemplate_Stellar, // Supondo que esse seja o 19º tipo
 };
 
 void TeraIconSummaryScreen(void)

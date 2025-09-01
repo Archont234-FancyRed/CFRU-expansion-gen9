@@ -52,4 +52,4 @@ extern const u8 sText_Ice[];
 extern const u8 sText_Dragon[];
 extern const u8 sText_Dark[];
 extern const u8 sText_Fairy[];
-extern const u8 sText_Stellar[];
+
