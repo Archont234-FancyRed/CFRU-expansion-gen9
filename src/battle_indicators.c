@@ -122,6 +122,7 @@ extern const u8 Tera_IndicatorIceTiles[];
 extern const u8 Tera_IndicatorDragonTiles[];
 extern const u8 Tera_IndicatorDarkTiles[];
 extern const u8 Tera_IndicatorFairyTiles[];
+extern const u8 Tera_IndicatorStellarTiles[];
 
 extern const u16 Tera_IndicatorNormalPal[];
 
@@ -165,6 +166,7 @@ enum TeraIndicators
     GFX_TAG_TERA_INDICATOR_DRAGON,
     GFX_TAG_TERA_INDICATOR_DARK,
     GFX_TAG_TERA_INDICATOR_FAIRY,
+    GFX_TAG_TERA_INDICATOR_STELLAR,
 };
 
 enum TriggerStates
@@ -273,6 +275,7 @@ static const struct CompressedSpriteSheet sTeraIceIndicatorSpriteSheet = {Tera_I
 static const struct CompressedSpriteSheet sTeraDragonIndicatorSpriteSheet = {Tera_IndicatorDragonTiles, (8 * 8) / 2, GFX_TAG_TERA_INDICATOR_DRAGON};
 static const struct CompressedSpriteSheet sTeraDarkIndicatorSpriteSheet = {Tera_IndicatorDarkTiles, (8 * 8) / 2, GFX_TAG_TERA_INDICATOR_DARK};
 static const struct CompressedSpriteSheet sTeraFairyIndicatorSpriteSheet = {Tera_IndicatorFairyTiles, (8 * 8) / 2, GFX_TAG_TERA_INDICATOR_FAIRY};
+static const struct CompressedSpriteSheet sTeraStellarIndicatorSpriteSheet = {Tera_IndicatorStellarTiles, (8 * 8) / 2, GFX_TAG_TERA_INDICATOR_STELLAR};
 static const struct SpritePalette sTeraNormalIndicatorPalette = {Tera_IndicatorNormalPal, GFX_TAG_TERA_INDICATOR_NORMAL};
 
 static const struct CompressedSpriteSheet * const sTeraIndicatorSpriteSheets[NUMBER_OF_MON_TYPES] =
@@ -294,7 +297,8 @@ static const struct CompressedSpriteSheet * const sTeraIndicatorSpriteSheets[NUM
 	[TYPE_ICE] = &sTeraIceIndicatorSpriteSheet,
 	[TYPE_DRAGON] = &sTeraDragonIndicatorSpriteSheet,
 	[TYPE_DARK] = &sTeraDarkIndicatorSpriteSheet,
-	[TYPE_FAIRY] = &sTeraFairyIndicatorSpriteSheet,  
+	[TYPE_FAIRY] = &sTeraFairyIndicatorSpriteSheet,
+	[TYPE_STELLAR] = &sTeraStellarIndicatorSpriteSheet,    
 };
 
 static const struct OamData sIndicatorOam =
@@ -531,6 +535,16 @@ static const struct SpriteTemplate sTeraFairyIndicatorSpriteTemplate =
     .callback = SpriteCB_MegaIndicator,
 };
 
+static const struct SpriteTemplate sTeraStellarIndicatorSpriteTemplate =
+{
+    .tileTag = GFX_TAG_TERA_INDICATOR_STELLAR,
+    .paletteTag = GFX_TAG_TERA_INDICATOR_NORMAL,
+    .oam = &sIndicatorOam,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCB_MegaIndicator,
+};
 
 static const struct SpriteTemplate * const sTeraIndicatorSpriteTemplates[NUMBER_OF_MON_TYPES] =
 {
@@ -552,6 +566,7 @@ static const struct SpriteTemplate * const sTeraIndicatorSpriteTemplates[NUMBER_
 	[TYPE_DRAGON] = &sTeraDragonIndicatorSpriteTemplate,
 	[TYPE_DARK] = &sTeraDarkIndicatorSpriteTemplate,
 	[TYPE_FAIRY] = &sTeraFairyIndicatorSpriteTemplate,
+	[TYPE_STELLAR] = &sTeraStellarIndicatorSpriteTemplate,  
 };
 
 #define type_icon_frame(ptr, frame) {.data = (u8 *)ptr + (1 * 2 * frame * 32), .size = 1 * 2 * 32}
@@ -580,6 +595,7 @@ static const struct SpriteFrameImage sTypeIconPicTable[] =
 	[0x15] = 			type_icon_frame(CamomonsTypeIcons2Tiles, TYPE_MYSTERY),
 	[0x16] = 			type_icon_frame(CamomonsTypeIcons2Tiles, TYPE_MYSTERY),
 	[TYPE_FAIRY] = 		type_icon_frame(CamomonsTypeIconsTiles, TYPE_FAIRY),
+	[TYPE_STELLAR] =	type_icon_frame(CamomonsTypeIcons2Tiles, TYPE_MYSTERY),
 };
 
 static const union AffineAnimCmd sSpriteAffineAnim_RaidShieldCreate[] =
@@ -1127,7 +1143,7 @@ static void SpriteCB_MegaIndicator(struct Sprite* self)
 			break;
 
 		// Add case for Terastallization
-		case GFX_TAG_TERA_INDICATOR_NORMAL ... GFX_TAG_TERA_INDICATOR_FAIRY:
+		case GFX_TAG_TERA_INDICATOR_NORMAL ... GFX_TAG_TERA_INDICATOR_STELLAR:
 			if (!IsTerastallized(INDICATOR_BANK))
 			{
 				self->invisible = TRUE;
@@ -1580,6 +1596,7 @@ void LoadMegaGraphics(u8 state)
 		unusedArg bool8 loadedTeraDragonGfx   = IndexOfSpriteTileTag(GFX_TAG_TERA_INDICATOR_DRAGON)   != 0xFF;
 		unusedArg bool8 loadedTeraDarkGfx     = IndexOfSpriteTileTag(GFX_TAG_TERA_INDICATOR_DARK)     != 0xFF;
 		unusedArg bool8 loadedTeraFairyGfx    = IndexOfSpriteTileTag(GFX_TAG_TERA_INDICATOR_FAIRY)    != 0xFF;
+		unusedArg bool8 loadedTeraStellarGfx  = IndexOfSpriteTileTag(GFX_TAG_TERA_INDICATOR_STELLAR)  != 0xFF;
 
 		#if (defined MEGA_EVOLUTION_FEATURE || defined DYNAMAX_FEATURE)
 		if (IsTerastallized(gActiveBattler))
@@ -1790,6 +1807,14 @@ void LoadMegaGraphics(u8 state)
 						{
 							LoadCompressedSpriteSheetUsingHeap(sTeraIndicatorSpriteSheets[teraType]);
 							loadedTeraFairyGfx = TRUE;
+						}
+						break;
+
+					case TYPE_STELLAR:
+						if (!loadedTeraStellarGfx)
+						{
+							LoadCompressedSpriteSheetUsingHeap(sTeraIndicatorSpriteSheets[teraType]);
+							loadedTeraStellarGfx = TRUE;
 						}
 						break;
 
