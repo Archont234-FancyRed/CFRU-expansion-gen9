@@ -1514,7 +1514,7 @@ static void ModulateDmgByType(u8 multiplier, const u16 move, const u8 moveType, 
 		multiplier = TYPE_MUL_SUPER_EFFECTIVE;
 
 	// For Terastallization - Stellar Type Check
-	if (moveType == TYPE_STELLAR)
+	if (moveType == TYPE_SOUND)
 	{
 		if (IsTerastallized(bankDef))
 			multiplier = TYPE_MUL_SUPER_EFFECTIVE;
@@ -4836,7 +4836,7 @@ static void ApplySTABMultipliers(void)
     bool8 hasTeraStab = IsTerastallized(gBankAttacker) && moveType == teraType;
     bool8 moveMatchesOriginalTypes = ((moveType == originalType1) || (moveType == originalType2));
     bool8 hasDoubleTeraStab = (hasTeraStab && moveMatchesOriginalTypes);
-    bool8 isStellarTera = IsTerastallized(gBankAttacker) && teraType == TYPE_STELLAR;
+    bool8 isStellarTera = IsTerastallized(gBankAttacker) && teraType == TYPE_SOUND;
     bool8 isStellarBoostActive = !gNewBS->teraData.stellarBoostUsed[side][partyId][moveType];
     bool8 hasStellarTeraOriginalStab = isStellarTera && moveMatchesOriginalTypes;
     bool8 hasStellarTeraLesserStab = isStellarTera && !moveMatchesOriginalTypes;

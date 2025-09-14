@@ -298,7 +298,7 @@ static const struct CompressedSpriteSheet * const sTeraIndicatorSpriteSheets[NUM
 	[TYPE_DRAGON] = &sTeraDragonIndicatorSpriteSheet,
 	[TYPE_DARK] = &sTeraDarkIndicatorSpriteSheet,
 	[TYPE_FAIRY] = &sTeraFairyIndicatorSpriteSheet,
-	[TYPE_STELLAR] = &sTeraStellarIndicatorSpriteSheet,    
+	[TYPE_SOUND] = &sTeraStellarIndicatorSpriteSheet,    
 };
 
 static const struct OamData sIndicatorOam =
@@ -566,7 +566,7 @@ static const struct SpriteTemplate * const sTeraIndicatorSpriteTemplates[NUMBER_
 	[TYPE_DRAGON] = &sTeraDragonIndicatorSpriteTemplate,
 	[TYPE_DARK] = &sTeraDarkIndicatorSpriteTemplate,
 	[TYPE_FAIRY] = &sTeraFairyIndicatorSpriteTemplate,
-	[TYPE_STELLAR] = &sTeraStellarIndicatorSpriteTemplate,  
+	[TYPE_SOUND] = &sTeraStellarIndicatorSpriteTemplate,  
 };
 
 #define type_icon_frame(ptr, frame) {.data = (u8 *)ptr + (1 * 2 * frame * 32), .size = 1 * 2 * 32}
@@ -595,7 +595,7 @@ static const struct SpriteFrameImage sTypeIconPicTable[] =
 	[0x15] = 			type_icon_frame(CamomonsTypeIcons2Tiles, TYPE_MYSTERY),
 	[0x16] = 			type_icon_frame(CamomonsTypeIcons2Tiles, TYPE_MYSTERY),
 	[TYPE_FAIRY] = 		type_icon_frame(CamomonsTypeIconsTiles, TYPE_FAIRY),
-	[TYPE_STELLAR] =	type_icon_frame(CamomonsTypeIcons2Tiles, TYPE_MYSTERY),
+	[TYPE_SOUND] =	type_icon_frame(CamomonsTypeIcons2Tiles, TYPE_MYSTERY),
 };
 
 static const union AffineAnimCmd sSpriteAffineAnim_RaidShieldCreate[] =
@@ -1810,7 +1810,7 @@ void LoadMegaGraphics(u8 state)
 						}
 						break;
 
-					case TYPE_STELLAR:
+					case TYPE_SOUND:
 						if (!loadedTeraStellarGfx)
 						{
 							LoadCompressedSpriteSheetUsingHeap(sTeraIndicatorSpriteSheets[teraType]);

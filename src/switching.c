@@ -1068,7 +1068,7 @@ void atk52_switchineffects(void)
 			// If user is already terastallized, bring back the effects
 			if (IsTerastallized(gActiveBattler))
 			{
-				if (GetTeraType(gActiveBattler) != TYPE_STELLAR)
+				if (GetTeraType(gActiveBattler) != TYPE_SOUND)
 					SET_BATTLER_TYPE(gActiveBattler, GetTeraType(gActiveBattler));
 			}
 		__attribute__ ((fallthrough));

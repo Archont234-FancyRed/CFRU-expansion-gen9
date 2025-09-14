@@ -265,7 +265,7 @@ EventScript_ChangeTeraTypeNPC_SetFairy:
     end
 
 EventScript_ChangeTeraTypeNPC_SetStellar:
-    setvar 0x8001 TYPE_STELLAR
+    setvar 0x8001 TYPE_SOUND
     callasm ChangeTeraTypeInOW
     buffernumber 0x1 0x4001
     msgbox gText_ChangeTeraTypeNPCFetchTeraStellar MSG_NORMAL

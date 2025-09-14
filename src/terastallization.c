@@ -75,7 +75,7 @@ const u16 gTeraBlendColors[] =
     [TYPE_DARK]     = RGB(5, 5, 5),     // Black
     [TYPE_FAIRY]    = RGB(31, 18, 24),  // Rose Pink
     [TYPE_BLANK]    = RGB(31, 31, 31),  // White
-    [TYPE_STELLAR]  = RGB(28, 28, 31),  // Still unsure - Gave it a Silvery Blue Tint
+    [TYPE_SOUND]  = RGB(28, 28, 31),  // Still unsure - Gave it a Silvery Blue Tint
 };
 
 // Check if the Pokemon has terastallized or not
@@ -161,7 +161,7 @@ static const u8 *const sTypeNames[NUMBER_OF_MON_TYPES] =
     [TYPE_DARK]     = sText_Dark,
     [TYPE_STEEL]    = sText_Steel,
     [TYPE_FAIRY]    = sText_Fairy,
-    [TYPE_STELLAR]   = sText_Stellar,
+    [TYPE_SOUND]   = sText_Stellar,
 };
 
 // Main Function - Try type changes
@@ -183,7 +183,7 @@ u8 *DoTerastallize(u8 bank)
         gBattleScripting.bank = bank;
 
         // Because Stellar Tera Defensive Typing remains same
-        if (teraType != TYPE_STELLAR)
+        if (teraType != TYPE_SOUND)
             SET_BATTLER_TYPE(bank, teraType);
         GetSpeciesName(gStringVar1, species);
         StringCopy(gStringVar2, sTypeNames[teraType]);
@@ -495,7 +495,7 @@ static const struct SpriteSheet *const sTeraTypeIconSheets[NUMBER_OF_MON_TYPES] 
     [TYPE_DRAGON]   = &gTeraTypeIcon_DragonSummarySpriteSheet,
     [TYPE_DARK]     = &gTeraTypeIcon_DarkSummarySpriteSheet,
     [TYPE_FAIRY]    = &gTeraTypeIcon_FairySummarySpriteSheet,
-    [TYPE_STELLAR]  = &gTeraTypeIcon_StellarSummarySpriteSheet,
+    [TYPE_SOUND]  = &gTeraTypeIcon_StellarSummarySpriteSheet,
 };
 
 static const struct SpritePalette sTeraTypeIconPalTemplate =
@@ -742,7 +742,7 @@ static const struct SpriteTemplate *const gTeraTypeIconSpriteTemplates[NUMBER_OF
     [TYPE_DRAGON]   = &gTeraTypeIconSpriteTemplate_Dragon,
     [TYPE_DARK]     = &gTeraTypeIconSpriteTemplate_Dark,
     [TYPE_FAIRY]    = &gTeraTypeIconSpriteTemplate_Fairy,
-    [TYPE_STELLAR]  = &gTeraTypeIconSpriteTemplate_Stellar, // Supondo que esse seja o 19º tipo
+    [TYPE_SOUND]  = &gTeraTypeIconSpriteTemplate_Stellar, // Supondo que esse seja o 19º tipo
 };
 
 void TeraIconSummaryScreen(void)
