@@ -595,7 +595,11 @@ static const struct SpriteFrameImage sTypeIconPicTable[] =
 	[0x15] = 			type_icon_frame(CamomonsTypeIcons2Tiles, TYPE_MYSTERY),
 	[0x16] = 			type_icon_frame(CamomonsTypeIcons2Tiles, TYPE_MYSTERY),
 	[TYPE_FAIRY] = 		type_icon_frame(CamomonsTypeIconsTiles, TYPE_FAIRY),
-	[TYPE_SOUND] =	type_icon_frame(CamomonsTypeIcons2Tiles, TYPE_MYSTERY),
+	[TYPE_SOUND] =	type_icon_frame(CamomonsTypeIconsTiles, TYPE_SOUND),
+	[TYPE_MYSTIC] = type_icon_frame(CamomonsTypeIconsTiles, TYPE_MYSTIC),
+	[TYPE_LIGHT] = type_icon_frame(CamomonsTypeIconsTiles, TYPE_LIGHT),
+	//[TYPE_MYSTIC] = type_icon_frame(CamomonsTypeIcons2Tiles, TYPE_MYSTIC),
+	//[TYPE_LIGHT] = type_icon_frame(CamomonsTypeIconsTiles, TYPE_LIGHT),
 };
 
 static const union AffineAnimCmd sSpriteAffineAnim_RaidShieldCreate[] =
