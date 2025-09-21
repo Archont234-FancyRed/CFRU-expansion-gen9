@@ -70,8 +70,14 @@ The Tera Type of [BUFFER1]\nis now Dark!
 #org @gText_ChangeTeraTypeNPCFetchTeraFairy
 The Tera Type of [BUFFER1]\nis now Fairy!
 
-#org @gText_ChangeTeraTypeNPCFetchTeraStellar
-The Tera Type of [BUFFER1]\nis now Stellar!
+#org @gText_ChangeTeraTypeNPCFetchTeraSound
+The Tera Type of [BUFFER1]\nis now Sound!
+
+#org @gText_ChangeTeraTypeNPCFetchTeraCosmic
+The Tera Type of [BUFFER1]\nis now Cosmic!
+
+#org @gText_ChangeTeraTypeNPCFetchTeraLight
+The Tera Type of [BUFFER1]\nis now Light!
 
 #org @gText_TestScript2
 Tera Flag is now set!

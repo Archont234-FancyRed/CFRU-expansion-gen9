@@ -2971,7 +2971,9 @@ extern const u8 sText_Ice[];
 extern const u8 sText_Dragon[];
 extern const u8 sText_Dark[];
 extern const u8 sText_Fairy[];
-extern const u8 sText_Stellar[];
+extern const u8 sText_Sound[];
+extern const u8 sText_Cosmic[];
+extern const u8 sText_Light[];
 
 // Scrolling Lists
 static const u8* sMultichoiceSet1[] =
@@ -2994,7 +2996,9 @@ static const u8* sMultichoiceSet1[] =
     sText_Dragon,
     sText_Dark,
     sText_Fairy,
-	sText_Stellar,
+	sText_Sound,
+	sText_Cosmic,
+	sText_Light,
 };
 
 // Multichoice Lists

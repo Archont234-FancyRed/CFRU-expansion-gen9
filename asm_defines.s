@@ -291,7 +291,7 @@
 .equ TYPE_ROOSTLESS, 0x13
 .equ TYPE_FAIRY, 0x17
 .equ TYPE_SOUND, 0x18
-.equ TYPE_MYSTIC, 0x19
+.equ TYPE_COSMIC, 0x19
 .equ TYPE_LIGHT, 0x1A
 
 @terrains

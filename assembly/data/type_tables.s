@@ -41,7 +41,7 @@ typeicon 42, 12, 0xE0       @ -PP- icon
 typeicon 42, 12, 0xE8       @ -Effect- icon
 typeicon 32, 12, 0x100      @ Fairy icon
 typeicon 32, 12, 0x104      @ Sound Icon
-typeicon 32, 12, 0x108      @ Mystic Icon
+typeicon 32, 12, 0x108      @ Cosmic Icon
 typeicon 32, 12, 0x10C     @ Light Icon
 typeicon  8,  8, 0xAE       @ Unused (Small white pokeball)
 typeicon  8,  8, 0xAF       @ Unused (Small dark pokeball)

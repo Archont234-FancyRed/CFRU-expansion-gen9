@@ -116,7 +116,9 @@ EventScript_ChangeTeraTypeNPCSelected:
         case 15, EventScript_ChangeTeraTypeNPC_SetDragon
         case 16, EventScript_ChangeTeraTypeNPC_SetDark
         case 17, EventScript_ChangeTeraTypeNPC_SetFairy
-        case 18, EventScript_ChangeTeraTypeNPC_SetStellar
+        case 18, EventScript_ChangeTeraTypeNPC_SetSound
+        case 19, EventScript_ChangeTeraTypeNPC_SetCosmic
+        case 20, EventScript_ChangeTeraTypeNPC_SetLight
         case 0x7F, EventScript_ChangeTeraTypeNPCNo
 
 
@@ -264,11 +266,27 @@ EventScript_ChangeTeraTypeNPC_SetFairy:
     release
     end
 
-EventScript_ChangeTeraTypeNPC_SetStellar:
+EventScript_ChangeTeraTypeNPC_SetSound:
     setvar 0x8001 TYPE_SOUND
     callasm ChangeTeraTypeInOW
     buffernumber 0x1 0x4001
-    msgbox gText_ChangeTeraTypeNPCFetchTeraStellar MSG_NORMAL
+    msgbox gText_ChangeTeraTypeNPCFetchTeraSound MSG_NORMAL
+    release
+    end
+
+EventScript_ChangeTeraTypeNPC_SetCosmic:
+    setvar 0x8001 TYPE_COSMIC
+    callasm ChangeTeraTypeInOW
+    buffernumber 0x1 0x4001
+    msgbox gText_ChangeTeraTypeNPCFetchTeraCosmic MSG_NORMAL
+    release
+    end
+
+EventScript_ChangeTeraTypeNPC_SetLight:
+    setvar 0x8001 TYPE_LIGHT
+    callasm ChangeTeraTypeInOW
+    buffernumber 0x1 0x4001
+    msgbox gText_ChangeTeraTypeNPCFetchTeraLight MSG_NORMAL
     release
     end
 
