@@ -1179,13 +1179,13 @@ static void SpriteCB_MegaIndicator(struct Sprite* self)
 			break;
 
 		// Add case for Terastallization
-		//case GFX_TAG_TERA_INDICATOR_NORMAL ... GFX_TAG_TERA_INDICATOR_STELLAR:
-		//	if (!IsTerastallized(INDICATOR_BANK))
-		//	{
-		//		self->invisible = TRUE;
-		//		return;
-		//	}
-		//	break;
+		case GFX_TAG_TERA_INDICATOR_NORMAL ... GFX_TAG_TERA_INDICATOR_LIGHT:
+			if (!IsTerastallized(INDICATOR_BANK))
+			{
+				self->invisible = TRUE;
+				return;
+			}
+			break;
 
 		default: //GFX_TAG_MEGA_INDICATOR
 			if (gNewBS == NULL)
