@@ -11,3 +11,4 @@ npc 3 1 4 EventScript_Pallet_FatGuy
 npc 3 1 5 EventScript_ViridianCity_Youngster
 npc 3 1 6 EventScript_ViridianCity_YoungMan
 npc 3 1 9 EventScript_ViridianCity_TeraOrb
+npc 3 1 10 EventScript_ViridianCity_OtherTestItem

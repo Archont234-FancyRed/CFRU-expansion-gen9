@@ -821,8 +821,9 @@ enum
 #define ITEM_MASTERPIECE_TEACUP 0x305
 #define ITEM_TERA_ORB 0x306
 #define ITEM_PORTABLE_PC 0x307
-//Unused Items
-#define ITEM_FREE_SPACE1 0x308 //These are reserved for future use
+
+//Unused Items / new items for hack
+#define ITEM_STRIPED_MUSHROOM 0x308 //These are reserved for future use
 #define ITEM_FREE_SPACE2 0x309
 #define ITEM_FREE_SPACE3 0x30A
 

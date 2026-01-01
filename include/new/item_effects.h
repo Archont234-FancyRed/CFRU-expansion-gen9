@@ -540,4 +540,5 @@ const u8 *const gItemEffectTable2[ITEMS_COUNT] =
     [ITEM_GREPA_BERRY - ITEM_POTION] = sItemEffect_GrepaBerry,
     [ITEM_TAMATO_BERRY - ITEM_POTION] = sItemEffect_TamatoBerry,
     [LAST_BERRY_INDEX - ITEM_POTION] = NULL,
+    [ITEM_STRIPED_MUSHROOM - ITEM_POTION] = sItemEffect_EvoStone,
 };

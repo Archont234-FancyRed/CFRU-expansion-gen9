@@ -227,6 +227,8 @@ extern const u32 gBag_IceStonePal[];
 
 extern const u32 gBag_BalmMushroomTiles[];
 extern const u32 gBag_BalmMushroomPal[];
+extern const u32 gBag_MoodyMushroomTiles[];
+extern const u32 gBag_MoodyMushroomPal[];
 
 #define gBag_PearlTiles ((u32*)0x08E8A284)
 #define gBag_PearlPal ((u32*)0x08E8A300)
@@ -2191,4 +2193,5 @@ extern const u8 DESC_HISUI_ROCK[];
 extern const u8 DESC_MASTERPIECE_TEACUP[];
 extern const u8 DESC_UNREMARKABLE_TEACUP[];
 extern const u8 DESC_PORTABLE_PC[];
+extern const u8 DESC_STRIPED_MUSHROOM[];
 #endif

@@ -15,7 +15,7 @@ static const struct LevelUpMove sEmptyMoveset[] = {
 static const struct LevelUpMove sBulbasaurLevelUpLearnset[] = {
 	LEVEL_UP_MOVE( 1, MOVE_TACKLE),
 	LEVEL_UP_MOVE( 3, MOVE_GROWL),
-	LEVEL_UP_MOVE( 7, MOVE_LEECHSEED),
+	LEVEL_UP_MOVE( 7, MOVE_TWINBEAM),
 	LEVEL_UP_MOVE( 9, MOVE_VINEWHIP),
 	LEVEL_UP_MOVE(13, MOVE_POISONPOWDER),
 	LEVEL_UP_MOVE(13, MOVE_SLEEPPOWDER),
@@ -22296,6 +22296,26 @@ static const struct LevelUpMove sPecharuntLevelUpLearnset[] = {
 	LEVEL_UP_END
 };
 
+static const struct LevelUpMove sFungheonLevelUpLearnset[] = {
+	LEVEL_UP_MOVE(1, MOVE_MEANLOOK),
+	LEVEL_UP_MOVE(1, MOVE_ROLLOUT),
+	LEVEL_UP_MOVE(1, MOVE_DEFENSECURL),
+	LEVEL_UP_MOVE(1, MOVE_SMOG),
+	LEVEL_UP_MOVE(1, MOVE_POISONGAS),
+	LEVEL_UP_MOVE(1, MOVE_MEMENTO),
+	LEVEL_UP_MOVE(1, MOVE_ASTONISH),
+	LEVEL_UP_MOVE(8, MOVE_WITHDRAW),
+	LEVEL_UP_MOVE(16, MOVE_DESTINYBOND),
+	LEVEL_UP_MOVE(24, MOVE_FAKETEARS),
+	LEVEL_UP_MOVE(32, MOVE_PARTINGSHOT),
+	LEVEL_UP_MOVE(40, MOVE_SHADOWBALL),
+	LEVEL_UP_MOVE(48, MOVE_MALIGNANTCHAIN),
+	LEVEL_UP_MOVE(56, MOVE_TOXIC),
+	LEVEL_UP_MOVE(64, MOVE_NASTYPLOT),
+	LEVEL_UP_MOVE(72, MOVE_RECOVER),
+	LEVEL_UP_END
+};
+
 const struct LevelUpMove* const gLevelUpLearnsets[] =
 {
 	[SPECIES_NONE] = sEmptyMoveset,
@@ -23733,4 +23753,5 @@ const struct LevelUpMove* const gLevelUpLearnsets[] =
 	[SPECIES_DECIDUEYE_H] = sDecidueyeHLevelUpLearnset,
 	[SPECIES_CALYREX_SHADOW_RIDER] = sCalyrexShadowRiderLevelUpLearnset,
 	[SPECIES_CALYREX_ICE_RIDER] = sCalyrexIceRiderLevelUpLearnset,
+	[SPECIES_FUNGHEON] = sFungheonLevelUpLearnset,
 };

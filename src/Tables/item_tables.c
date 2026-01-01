@@ -663,6 +663,7 @@ const u16 gItemsByType[ITEMS_COUNT] =
 	[ITEM_SYRUPY_APPLE] = ITEM_TYPE_EVOLUTION_ITEM,
 	[ITEM_METAL_ALLOY] = ITEM_TYPE_EVOLUTION_ITEM,
 	[ITEM_LEADERS_CREST] = ITEM_TYPE_EVOLUTION_ITEM,
+	[ITEM_STRIPED_MUSHROOM] = ITEM_TYPE_EVOLUTION_ITEM,
 
 	[ITEM_X_ATTACK] = ITEM_TYPE_X_ATTACK,
 	[ITEM_X_DEFEND] = ITEM_TYPE_X_DEFENSE,
@@ -1780,7 +1781,7 @@ const u32 *const gItemGraphicsTable[ITEMS_COUNT + 1][2] =
 	{unremarkable_teacupTiles, unremarkable_teacupPal},
 	{tera_orbTiles, tera_orbPal},
 	{Portable_PCTiles, Portable_PCPal},
-	{gBag_InterrogationTiles, gBag_InterrogationPal}, //Free space 1
+	{gBag_MoodyMushroomTiles, gBag_MoodyMushroomPal}, //Free space 1
 	{gBag_InterrogationTiles, gBag_InterrogationPal},
 	{gBag_InterrogationTiles, gBag_InterrogationPal},
 };
@@ -14231,20 +14232,20 @@ const struct Item gItemData[] =
 		.secondaryId = 0
 	},
 	{
-        .name = {_F, _r, _e, _e, _SPACE, _S, _p, _a, _c, _e, _SPACE, _1, _END},
-        .itemId = ITEM_FREE_SPACE1,
-        .price = 0,
-        .holdEffect = 0,
-        .holdEffectParam = 0,
-        .description = gText_ItemNone,
-        .importance = 0,
-        .unk19 = 0,
-        .pocket = POCKET_ITEMS,
-        .type = ITEM_USE_BAG_MENU,
-        .fieldUseFunc = FieldUseFunc_OakStopsYou,
-        .battleUsage = 0,
-        .battleUseFunc = NULL,
-        .secondaryId = 0
+        .name = {_M, _o, _o, _d, _y, _M, _u, _s, _h, _r, _o, _o, _m, _END},
+        .itemId = ITEM_STRIPED_MUSHROOM,
+        .price = 2000,
+		.holdEffect = 0,
+		.holdEffectParam = 0,
+		.description = DESC_STRIPED_MUSHROOM,
+		.importance = 0,
+		.unk19 = 0,
+		.pocket = POCKET_ITEMS,
+		.type = ITEM_USE_PARTY_MENU,
+		.fieldUseFunc = FieldUseFunc_EvoItem,
+		.battleUsage = 0,
+		.battleUseFunc = NULL,
+		.secondaryId = 0
     },
 	{
         .name = {_F, _r, _e, _e, _SPACE, _S, _p, _a, _c, _e, _SPACE, _2, _END},

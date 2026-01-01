@@ -38,8 +38,8 @@ const struct WildPokemonInfo gRoute1_LandMonsInfoMorning = {15, gRoute1_LandMons
 
 const struct WildPokemon gRoute1_LandMonsDay[] =
 {
-    {2, 3, SPECIES_ZIGZAGOON},       // Classic early Normal-type
-    {2, 3, SPECIES_BUIZEL},          // Water-type, Gen 4 freshness
+    {2, 3, SPECIES_KOFFING_G},       // Classic early Normal-type
+    {2, 3, SPECIES_WEEZING_G},          // Water-type, Gen 4 freshness
     {2, 3, SPECIES_ROOKIDEE},        // Flying/Steel later on, Gen 8 bird
     {2, 3, SPECIES_BUNEARY},         // Fast Normal-type with potential
     {2,  3, SPECIES_SEWADDLE},        // Bug/Grass option, early status
@@ -56,8 +56,8 @@ const struct WildPokemonInfo gRoute1_LandMonsInfoDay = {15, gRoute1_LandMonsDay}
 
 const struct WildPokemon gRoute1_LandMonsEvening[] =
 {
-    {2, 3, SPECIES_NIDORAN_M},     // Slightly edgy dusk encounter
-    {2, 3, SPECIES_NIDORAN_F},     // Pair with above, classic duo
+    {2, 3, SPECIES_KOFFING_G},     // Slightly edgy dusk encounter
+    {2, 3, SPECIES_WEEZING_G},     // Pair with above, classic duo
     {2, 3, SPECIES_MURKROW},       // Dusk-themed Flying/Dark
     {2, 3, SPECIES_SNUBBULL},      // Fairy type, temperamental vibes
     {2, 3, SPECIES_BUNEARY},       // Cute, dusk-active rabbit
@@ -74,8 +74,8 @@ const struct WildPokemonInfo gRoute1_LandMonsInfoEvening = {15, gRoute1_LandMons
 
 const struct WildPokemon gRoute1_LandMonsNight[] =
 {
-    {2, 3, SPECIES_HOOTHOOT},       // Classic owl, perfect for night
-    {2, 3, SPECIES_POOCHYENA},      // Night-prowling Dark-type
+    {2, 3, SPECIES_EEVEE},       // Classic owl, perfect for night
+    {2, 3, SPECIES_EEVEE},      // Night-prowling Dark-type
     {2, 3, SPECIES_SPINARAK},       // Nocturnal Bug/Poison
     {2, 3, SPECIES_CUTIEFLY},       // Gentle fluttery fairy at night
     {2, 3, SPECIES_SANDSHREW},      // Ground type, fits cooler nights
