@@ -5031,6 +5031,7 @@ u8 GetAIMoveEffectForMaxMove(u16 move, u8 bankAtk, u8 bankDef)
 		case MAX_EFFECT_GRASSY_TERRAIN:
 		case MAX_EFFECT_MISTY_TERRAIN:
 		case MAX_EFFECT_PSYCHIC_TERRAIN:
+		case MAX_EFFECT_COSMIC_TERRAIN:
 			if (!(gBattleTypeFlags & BATTLE_TYPE_BATTLE_CIRCUS && gBattleCircusFlags & BATTLE_CIRCUS_TERRAIN)
 			&& gTerrainType != (maxEffect - MAX_EFFECT_ELECTRIC_TERRAIN) + 1)
 				moveEffect = EFFECT_SET_TERRAIN;

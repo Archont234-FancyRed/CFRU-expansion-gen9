@@ -184,7 +184,8 @@ extern const u8 StickyWebLayString[];
 extern const u8 ElectricTerrainSetString[];
 extern const u8 GrassyTerrainSetString[];
 extern const u8 MistyTerrainSetString[];
-extern const u8 PsychicTerrainSetString[];
+extern const u8 PsychicTerrainSetString[]; 
+extern const u8 CosmicTerrainSetString[];
 
 #define gText_TargetAlreadyAsleep (u8*) 0x83FB57C
 #define gText_TargetAlreadyConfused (u8*) 0x83FB885

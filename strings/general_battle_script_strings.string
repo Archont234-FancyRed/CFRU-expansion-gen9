@@ -55,6 +55,9 @@ Mist swirls around the\nbattlefield!
 #org @PsychicTerrainSetString
 The battlefield got weird!
 
+#org @CosmicTerrainSetString
+The powers of cosmos are\non the battlefield!
+
 #org @TargetTransformedIntoType
 [TARGET]'s type\nchanged to [BUFFER][00]!
 

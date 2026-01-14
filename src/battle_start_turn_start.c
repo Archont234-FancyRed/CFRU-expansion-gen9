@@ -772,6 +772,9 @@ bool8 TryActivateOWTerrain(void)
 			case BATTLE_CIRCUS_PSYCHIC_TERRAIN:
 				owTerrain = PSYCHIC_TERRAIN;
 				break;
+			case BATTLE_CIRCUS_COSMIC_TERRAIN:
+				owTerrain = COSMIC_TERRAIN;
+				break;
 		}
 	}
 
@@ -792,6 +795,9 @@ bool8 TryActivateOWTerrain(void)
 				break;
 			case PSYCHIC_TERRAIN:
 				BattleScriptPushCursorAndCallback(BattleScript_PsychicTerrainBattleBegin);
+				effect = TRUE;
+			case COSMIC_TERRAIN:
+				BattleScriptPushCursorAndCallback(BattleScript_CosmicTerrainBattleBegin);
 				effect = TRUE;
 		}
 

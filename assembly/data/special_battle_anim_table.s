@@ -105,6 +105,8 @@ gBattleAnims_General:
 .word ANIM_STEALTHROCK2
 .word ANIM_SPIKES2
 .word ANIM_FROSTBITE
+.word COSMIC_TERRAIN_ACTIVE_ANIM
+.word ANIM_COSMIC_SURGE
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 .pool
@@ -1309,3 +1311,39 @@ gBattleAnim_CriticalCapture:
 	pause 0
 	playsound2 54 0
 	goto 0x81D6506
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+.pool
+ANIM_COSMIC_SURGE:
+	loadparticle ANIM_TAG_GOLD_STARS
+	playsound2 0xce SOUND_PAN_ATTACKER
+	launchtemplate COSMIC_TERRAIN_1 0x2 0x2 0x1a 0x0
+	launchtemplate COSMIC_TERRAIN_1 0x2 0x2 0x1a 0x2a
+	launchtemplate COSMIC_TERRAIN_1 0x2 0x2 0x1a 0x54
+	launchtemplate COSMIC_TERRAIN_1 0x2 0x2 0x1a 0x7e
+	launchtemplate COSMIC_TERRAIN_1 0x2 0x2 0x1a 0xa8
+	launchtemplate COSMIC_TERRAIN_1 0x2 0x2 0x1a 0xd2
+	pause 0x34
+	setarg 0x7 0xffff
+	playsound2 0xdb SOUND_PAN_ATTACKER
+	launchtask AnimTask_ScaleMonAndRestore 0x5 0x5 0xfff9 0xfff9 0xb 0x0 0x0
+	launchtemplate COSMIC_TERRAIN_2 0x82 0x1 0x0
+	launchtemplate COSMIC_TERRAIN_2 0x82 0x1 0x20
+	launchtemplate COSMIC_TERRAIN_2 0x82 0x1 0x40
+	launchtemplate COSMIC_TERRAIN_2 0x82 0x1 0x60
+	launchtemplate COSMIC_TERRAIN_2 0x82 0x1 0x80
+	launchtemplate COSMIC_TERRAIN_2 0x82 0x1 0xa0
+	launchtemplate COSMIC_TERRAIN_2 0x82 0x1 0xc0
+	launchtemplate COSMIC_TERRAIN_2 0x82 0x1 0xe0
+	waitanimation
+COSMIC_TERRAIN_ACTIVE_ANIM:
+	loaddefaultBG @At this point the new BG is in effect
+	waitbgfadein
+	soundcomplex 0xb1 SOUND_PAN_ABOVE 0xa 0x3
+	waitforsound
+	endanimation
+
+.align 2
+COSMIC_TERRAIN_1: objtemplate ANIM_TAG_GOLD_STARS ANIM_TAG_GOLD_STARS 0x83AC9C8 0x83E6118 0x0 gDummySpriteAffineAnimTable 0x80AA175
+COSMIC_TERRAIN_2: objtemplate ANIM_TAG_GOLD_STARS ANIM_TAG_GOLD_STARS 0x83AC9C8 0x83E6118 0x0 gDummySpriteAffineAnimTable 0x80AA2B1

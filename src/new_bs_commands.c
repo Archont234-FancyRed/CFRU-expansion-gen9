@@ -226,6 +226,12 @@ void atkFF06_setterrain(void)
 				gBattleScripting.animArg1 = B_ANIM_MISTY_SURGE;
 				gBattleStringLoader = MistyTerrainSetString;
 				break;
+			case MOVE_COSMICTERRAIN:
+			SET_COSMIC_TERRAIN:
+				type = COSMIC_TERRAIN;
+				gBattleScripting.animArg1 = B_ANIM_COSMIC_SURGE;
+				gBattleStringLoader = CosmicTerrainSetString;
+				break;
 			case MOVE_PSYCHICTERRAIN:
 			case MOVE_GENESIS_SUPERNOVA:
 			SET_PSYCHIC_TERRAIN:

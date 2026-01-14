@@ -1867,6 +1867,9 @@ u8 GetExceptionMoveType(u8 bankAtk, u16 move)
 					case PSYCHIC_TERRAIN:
 						moveType = TYPE_PSYCHIC;
 						break;
+					case COSMIC_TERRAIN:
+						moveType = TYPE_COSMIC;
+						break;
 					default:
 						moveType = TYPE_NORMAL;
 						break;
@@ -1987,6 +1990,9 @@ u8 GetMonExceptionMoveType(struct Pokemon* mon, u16 move)
 						break;
 					case PSYCHIC_TERRAIN:
 						moveType = TYPE_PSYCHIC;
+						break;
+					case COSMIC_TERRAIN:
+						moveType = TYPE_COSMIC;
 						break;
 					default:
 						moveType = TYPE_NORMAL;
@@ -4404,6 +4410,12 @@ static u16 AdjustBasePower(struct DamageCalc* data, u16 power)
 			case PSYCHIC_TERRAIN:
 			//1.5x Boost
 				if (data->atkIsGrounded && data->moveType == TYPE_PSYCHIC)
+					power = (power * TERRAIN_BOOST) / 10;
+				break;
+
+			case COSMIC_TERRAIN:
+				//1.5x Boost
+				if (data->moveType == TYPE_COSMIC)
 					power = (power * TERRAIN_BOOST) / 10;
 				break;
 		}

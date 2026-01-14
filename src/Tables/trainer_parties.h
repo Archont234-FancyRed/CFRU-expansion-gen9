@@ -3772,6 +3772,11 @@ static const struct TrainerMonNoItemDefaultMoves sParty_TrainerRivalOaksLabBulba
 static const struct TrainerMonNoItemDefaultMoves sParty_TrainerRivalOaksLabCharmander[] = {
     {
         .lvl = 5,
+        .species = SPECIES_DIGLETT,
+    },
+    
+    {
+        .lvl = 5,
         .species = SPECIES_CHARMANDER,
     },
 };

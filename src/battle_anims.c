@@ -229,6 +229,9 @@ void AnimTask_SetCamouflageBlend(u8 taskId)
 		case PSYCHIC_TERRAIN:
 			entry = 3;
 			break;
+		case COSMIC_TERRAIN:
+			entry = 4;
+			break;
 	}
 
 	if (entry)
@@ -377,6 +380,9 @@ void AnimTask_GetSecretPowerAnimation(u8 taskId)
 			break;
 		case PSYCHIC_TERRAIN:
 			move = gTerrainTable[3].secretPowerAnim;
+			break;
+		case COSMIC_TERRAIN:
+			move = gTerrainTable[4].secretPowerAnim;
 			break;
 		default:
 			if (IsTerrainMoveIndoors())
@@ -6467,6 +6473,7 @@ void UpdateOamPriorityInAllHealthboxes(u8 priority)
 				case B_ANIM_GRASSY_SURGE:
 				case B_ANIM_MISTY_SURGE:
 				case B_ANIM_PSYCHIC_SURGE:
+				case B_ANIM_COSMIC_SURGE:
 				case B_ANIM_SEA_OF_FIRE:
 				case B_ANIM_LUNAR_DANCE_HEAL:
 				case B_ANIM_HEALING_WISH_HEAL:
@@ -6881,7 +6888,9 @@ static bool8 ShouldAnimBeDoneRegardlessOfSubsitute(u8 animId)
 		case B_ANIM_GRASSY_SURGE:
 		case B_ANIM_MISTY_SURGE:
 		case B_ANIM_PSYCHIC_SURGE:
+		case B_ANIM_COSMIC_SURGE:
 		case B_ANIM_ELECTRIC_TERRAIN_ACTIVE:
+		case B_ANIM_COSMIC_TERRAIN_ACTIVE:
 		case B_ANIM_GRASSY_TERRAIN_ACTIVE:
 		case B_ANIM_MISTY_TERRAIN_ACTIVE:
 		case B_ANIM_PSYCHIC_TERRAIN_ACTIVE:

@@ -1038,6 +1038,7 @@ gMoveAnimations:
 .word ANIM_TEMPERFLARE
 .word ANIM_SUPERCELLSLAM
 .word ANIM_PSYCHICNOISE
+.word ANIM_COSMICTERRAIN
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 .pool
@@ -31118,3 +31119,35 @@ SetAverageBattlerPositionsHook:
 	bl SetAverageBattlerPositions
 	ldr r0, =0x8076E26 | 1
 	bx r0
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+.pool
+ANIM_COSMICTERRAIN:
+	loadparticle ANIM_TAG_ORBS @Recover Ball
+	loadparticle ANIM_TAG_GREEN_SPARKLE @Green Star
+	loadparticle ANIM_TAG_POISON_BUBBLE @Purple Colour
+	playsound2 0xBC SOUND_PAN_ATTACKER
+	launchtemplate PSY_TERRAIN_BALL 0x2 0x2 0x1a 0x0
+	launchtemplate PSY_TERRAIN_BALL 0x2 0x2 0x1a 0x2a
+	launchtemplate PSY_TERRAIN_BALL 0x2 0x2 0x1a 0x54
+	launchtemplate PSY_TERRAIN_BALL 0x2 0x2 0x1a 0x7e
+	launchtemplate PSY_TERRAIN_BALL 0x2 0x2 0x1a 0xa8
+	launchtemplate PSY_TERRAIN_BALL 0x2 0x2 0x1a 0xd2
+	pause 0x34
+	setarg 0x7 0xffff
+	playsound2 0xDB SOUND_PAN_ATTACKER
+	launchtask AnimTask_ScaleMonAndRestore 0x5 0x5 0xfff9 0xfff9 0xb bank_attacker 0x0
+	launchtemplate PSY_TERRAIN_PURPLESTAR TEMPLATE_TARGET | 2, 0x1 0x0
+	launchtemplate PSY_TERRAIN_PURPLESTAR TEMPLATE_TARGET | 2, 0x1 0x20
+	launchtemplate PSY_TERRAIN_PURPLESTAR TEMPLATE_TARGET | 2, 0x1 0x40
+	launchtemplate PSY_TERRAIN_PURPLESTAR TEMPLATE_TARGET | 2, 0x1 0x60
+	launchtemplate PSY_TERRAIN_PURPLESTAR TEMPLATE_TARGET | 2, 0x1 0x80
+	launchtemplate PSY_TERRAIN_PURPLESTAR TEMPLATE_TARGET | 2, 0x1 0xa0
+	launchtemplate PSY_TERRAIN_PURPLESTAR TEMPLATE_TARGET | 2, 0x1 SOUND_PAN_ATTACKER
+	launchtemplate PSY_TERRAIN_PURPLESTAR TEMPLATE_TARGET | 2, 0x1 0xe0
+	waitanimation
+	loaddefaultBG
+	waitbgfadein
+	soundcomplex 0xb1 SOUND_PAN_TARGET 0xa 0x3
+	waitforsound
+	endanimation

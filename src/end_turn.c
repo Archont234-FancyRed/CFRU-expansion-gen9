@@ -1385,7 +1385,7 @@ u8 TurnBasedEffects(u16 move, u8 bank, struct Pokemon* monAtk)
 			case ET_Terrain_Timer:
 				gNewBS->endTurnBlockState = 0; //For later
 				++gBattleStruct->turnEffectsTracker;
-				gBattleStruct->turnEffectsBank = 0;
+				gBattleStruct->turnEffectsBank = 0;				
 				if (gNewBS->TerrainTimer && --gNewBS->TerrainTimer == 0)
 				{
 					BattleScriptExecute(BattleScript_TerrainEnd);

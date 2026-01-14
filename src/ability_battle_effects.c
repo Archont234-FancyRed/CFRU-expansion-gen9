@@ -1297,7 +1297,10 @@ u8 AbilityBattleEffects(u8 caseID, u8 bank, u8 ability, u8 special, u16 moveArg)
 			break;
 	
 		case ABILITY_ELECTRICSURGE:
-			effect = TryActivateTerrainAbility(ELECTRIC_TERRAIN, B_ANIM_ELECTRIC_SURGE, bank);
+			if (!SpeciesHasCosmicSurge(SPECIES(bank)))
+				effect = TryActivateTerrainAbility(ELECTRIC_TERRAIN, B_ANIM_ELECTRIC_SURGE, bank);
+			else if (SpeciesHasCosmicSurge(SPECIES(bank)))
+				effect = TryActivateTerrainAbility(COSMIC_TERRAIN, B_ANIM_COSMIC_SURGE, bank);
 			break;
 
 		case ABILITY_GRASSYSURGE:
@@ -2928,6 +2931,10 @@ static u8 TryActivateTerrainAbility(u8 terrain, u8 anim, u8 bank)
 				break;
 			case PSYCHIC_TERRAIN:
 				gBattleStringLoader = PsychicTerrainSetString;
+				break;
+
+			case COSMIC_TERRAIN:
+				gBattleStringLoader = CosmicTerrainSetString;
 				break;
 		}
 

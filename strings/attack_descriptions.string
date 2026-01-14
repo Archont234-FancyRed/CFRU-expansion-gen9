@@ -1669,3 +1669,6 @@ User electrifies\nits body and drops\nonto the target.\nTake damage if fail.
 
 #org @DESC_PSYCHICNOISE
 Foe is prevented\nfrom recovering HP\nfor two turns.
+
+#org @DESC_COSMICTERRAIN
+The user makes the\nground weird for\nfive turns, boosting\nPsychic moves and\nblocking priority.

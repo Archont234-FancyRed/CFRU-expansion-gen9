@@ -1696,6 +1696,7 @@ static void HighlightPossibleTargets(void)
 					case MOVE_GRASSYTERRAIN:
 					case MOVE_MISTYTERRAIN:
 					case MOVE_PSYCHICTERRAIN:
+					case MOVE_COSMICTERRAIN:
 					case MOVE_TRICKROOM:
 					case MOVE_MAGICROOM:
 					case MOVE_WONDERROOM:

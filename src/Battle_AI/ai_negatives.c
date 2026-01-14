@@ -667,6 +667,14 @@ u8 AIScript_Negatives(const u8 bankAtk, const u8 bankDef, const u16 originalMove
 				}
 			}
 			break;
+
+		case COSMIC_TERRAIN:
+			if (CheckGrounding(bankDef) == GROUNDED)
+			{
+				for (int i = 0; i < gBattlersCount; ++i)
+					gStatuses3[i] |= STATUS3_LEVITATING;
+			}
+			break;
 	}
 
 	//Powder & Ion Deluge Check
@@ -2864,6 +2872,10 @@ SKIP_CHECK_TARGET:
 					if (gTerrainType == PSYCHIC_TERRAIN)
 						DECREASE_VIABILITY(10);
 					break;
+				case MOVE_COSMICTERRAIN:
+					if (gTerrainType == COSMIC_TERRAIN)
+						DECREASE_VIABILITY(10);
+					break;
 			}
 			break;
 
@@ -3234,6 +3246,14 @@ SKIP_CHECK_TARGET:
 					|| CheckGrounding(bankAtk) == IN_AIR)
 						DECREASE_VIABILITY(10);
 					break;
+
+				/*case MOVE_COSMICTERRAIN:
+					if (IsGravityActive()
+						|| data->atkItemEffect == ITEM_EFFECT_IRON_BALL
+						|| data->atkStatus3 & (STATUS3_ROOTED | STATUS3_LEVITATING | STATUS3_SMACKED_DOWN)
+						|| CheckGrounding(bankAtk) == IN_AIR)
+						DECREASE_VIABILITY(10);
+					break;*/
 			}
 			break;
 

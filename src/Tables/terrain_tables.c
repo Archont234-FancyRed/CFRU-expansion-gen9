@@ -31,6 +31,9 @@ extern const u8 BG_Misty_TerrainPal[];
 extern const u8 BG_Psychic_TerrainTiles[];
 extern const u8 BG_Psychic_TerrainMap[];
 extern const u8 BG_Psychic_TerrainPal[];
+extern const u8 BG_Cosmic_TerrainTiles[];
+extern const u8 BG_Cosmic_TerrainMap[];
+extern const u8 BG_Cosmic_TerrainPal[];
 
 const struct TerrainTableStruct gTerrainTable[] =
 {
@@ -64,6 +67,14 @@ const struct TerrainTableStruct gTerrainTable[] =
 			.secretPowerEffect = MOVE_EFFECT_SPD_MINUS_1,
 			.secretPowerAnim = MOVE_CONFUSION,
 			.naturePowerMove = MOVE_PSYCHIC,
+		},
+
+	[COSMIC_TERRAIN - 1] =
+		{
+			.camouflageType = TYPE_COSMIC,
+			.secretPowerEffect = MOVE_EFFECT_CONFUSION,
+			.secretPowerAnim = MOVE_SWIFT,
+			.naturePowerMove = MOVE_SWIFT,
 		},
 
 	[BATTLE_TERRAIN_GRASS + 4] =
@@ -664,6 +675,14 @@ const struct BattleBackground gAttackTerrainTable[] =
         .entryTilemap = gBattleTerrainAnimTilemap_Building,
         .palette = BG_Psychic_TerrainPal,
     },
+
+	{
+		.tileset = BG_Cosmic_TerrainTiles,
+		.tilemap = BG_Cosmic_TerrainMap,
+		.entryTileset = gBattleTerrainAnimTiles_Building,
+		.entryTilemap = gBattleTerrainAnimTilemap_Building,
+		.palette = BG_Cosmic_TerrainPal,
+	},
 };
 
 const u16 gCamouflageColours[] =

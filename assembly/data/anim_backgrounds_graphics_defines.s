@@ -143,3 +143,6 @@ definitions for battle backgrounds
 .equ BG_CHLOROBLAST_IMG, Hydro_CannonTiles
 .equ BG_CHLOROBLAST_PAL, ChloroblastPal
 .equ BG_CHLOROBLAST_RAW, Hydro_CannonMap
+.equ BG_COSMIC_TERRAIN_IMG, BG_Cosmic_TerrainTiles
+.equ BG_COSMIC_TERRAIN_PAL, BG_Cosmic_TerrainPal
+.equ BG_COSMIC_TERRAIN_RAW, BG_Cosmic_TerrainMap

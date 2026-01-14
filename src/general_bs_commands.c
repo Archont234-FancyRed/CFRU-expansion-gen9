@@ -1949,11 +1949,13 @@ static bool8 ShouldAnimBeDoneEvenWithBattleAnimsOff(u8 animId)
 		|| animId == B_ANIM_ELECTRIC_SURGE
 		|| animId == B_ANIM_GRASSY_SURGE
 		|| animId == B_ANIM_MISTY_SURGE
+		|| animId == B_ANIM_COSMIC_SURGE
 		|| animId == B_ANIM_PSYCHIC_SURGE
 		|| animId == B_ANIM_ELECTRIC_TERRAIN_ACTIVE
 		|| animId == B_ANIM_GRASSY_TERRAIN_ACTIVE
 		|| animId == B_ANIM_MISTY_TERRAIN_ACTIVE
 		|| animId == B_ANIM_PSYCHIC_TERRAIN_ACTIVE
+		|| animId == B_ANIM_COSMIC_TERRAIN_ACTIVE
 		|| animId == B_ANIM_LOAD_DEFAULT_BG
 		|| animId == B_ANIM_LOAD_ABILITY_POP_UP
 		|| animId == B_ANIM_DESTROY_ABILITY_POP_UP
@@ -4917,6 +4919,10 @@ u16 GetNaturePowerMove(void)
 			move = gTerrainTable[3].naturePowerMove;
 			break;
 
+		case COSMIC_TERRAIN:
+			move = gTerrainTable[4].naturePowerMove;
+			break;
+
 		default:
 			if (IsTerrainMoveIndoors())
 				move = gTerrainTable[BATTLE_TERRAIN_INSIDE + 4].naturePowerMove;
@@ -5299,6 +5305,10 @@ u8 GetSecretPowerEffect(void)
 			effect = gTerrainTable[3].secretPowerEffect;
 			break;
 
+		case COSMIC_TERRAIN:
+			effect = gTerrainTable[4].secretPowerEffect;
+			break;
+
 		default:
 			if (IsTerrainMoveIndoors())
 				effect = gTerrainTable[BATTLE_TERRAIN_INSIDE + 4].secretPowerEffect;
@@ -5613,6 +5623,10 @@ u8 GetCamouflageType(void)
 
 		case PSYCHIC_TERRAIN:
 			type = gTerrainTable[3].camouflageType;
+			break;
+
+		case COSMIC_TERRAIN:
+			type = gTerrainTable[4].camouflageType;
 			break;
 
 		default:

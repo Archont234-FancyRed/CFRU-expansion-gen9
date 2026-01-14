@@ -16103,7 +16103,23 @@ const struct BattleMove gBattleMoves[] =
 		.z_move_power = 175,
 		.split = SPLIT_SPECIAL,
 		.z_move_effect = 0
-	}
+	},
+
+	[MOVE_COSMICTERRAIN] =
+	{
+		.effect = EFFECT_SET_TERRAIN,
+		.power = 0,
+		.type = TYPE_COSMIC,
+		.accuracy = 0,
+		.pp = 10,
+		.secondaryEffectChance = 0,
+		.target = MOVE_TARGET_USER,
+		.priority = 0,
+		.flags = 0,
+		.z_move_power = 0,
+		.split = SPLIT_STATUS,
+		.z_move_effect = Z_EFFECT_DEF_UP_1
+	},
 #endif
 };
 

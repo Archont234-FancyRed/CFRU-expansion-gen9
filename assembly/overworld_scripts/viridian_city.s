@@ -8,6 +8,7 @@
 .global EventScript_ViridianCity_YoungMan
 .global EventScript_ViridianCity_Youngster
 .global EventScript_ViridianCity_TeraOrb
+.global EventScript_ViridianCity_OtherTestItem
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 EventScript_ViridianCity_YoungMan:
@@ -84,7 +85,14 @@ EventScript_ViridianCity_Youngster:
 
 EventScript_ViridianCity_TeraOrb:
     lock
-    giveitem ITEM_DYNAMAX_BAND 1 MSG_FIND
+    giveitem ITEM_STRIPED_MUSHROOM 1 MSG_FIND
+    release
+    end
+  end
+
+EventScript_ViridianCity_OtherTestItem:
+    lock
+    giveitem ITEM_TM10 1 MSG_FIND
     release
     end
   end

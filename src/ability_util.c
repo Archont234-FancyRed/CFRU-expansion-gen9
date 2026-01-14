@@ -127,6 +127,8 @@ extern const u8 gText_AbilityName_WindRider[];
 extern const u8 gText_AbilityDescription_WindRider[];
 extern const u8 gText_AbilityName_ZerotoHero[];
 extern const u8 gText_AbilityDescription_ZerotoHero[];
+extern const u8 gText_AbilityName_CosmicSurge[];
+extern const u8 gText_AbilityDescription_CosmicSurge[];
 
 const u8* GetAbilityNameOverride(const u8 ability, const u16 species) //Bypasses the 255 Ability limitation and implements clone Abilities
 {
@@ -466,6 +468,8 @@ const u8* GetAbilityNameOverride(const u8 ability, const u16 species) //Bypasses
 		case ABILITY_ELECTRICSURGE:
 			if(SpeciesHasHadronEngine(species))
 				return gText_AbilityName_HadronEngine;
+			if (SpeciesHasCosmicSurge(species))
+				return gText_AbilityName_CosmicSurge;
 			break;
 		case ABILITY_SCRAPPY:
 			if(SpeciesHasMindsEye(species))
@@ -623,6 +627,8 @@ const u8* GetAbilityDescriptionOverride(const u8 ability, const u16 species) //B
 		case ABILITY_ELECTRICSURGE:
 			if(SpeciesHasHadronEngine(species))
 				return gText_AbilityDescription_HadronEngine;
+			if (SpeciesHasCosmicSurge(species))
+				return gText_AbilityDescription_CosmicSurge;
 			break;
 		case ABILITY_SCRAPPY:
 			if(SpeciesHasMindsEye(species))
@@ -1540,4 +1546,13 @@ bool8 SpeciesHasZerotoHero(unusedArg u16 species) //Custom Unbound Ability
 	#else
 	return FALSE;
 	#endif
+}
+
+bool8 SpeciesHasCosmicSurge(unusedArg u16 species)
+{
+#ifdef SPECIES_BULBASAUR
+	return species == SPECIES_BULBASAUR;
+#else
+	return FALSE;
+#endif
 }

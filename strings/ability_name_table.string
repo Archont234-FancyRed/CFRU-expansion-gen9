@@ -767,8 +767,8 @@ Screen Cleaner
 #org @NAME_PASTEL_VEIL
 Pastel Veil
 
-#org @NAME_LAST_ABILITY
--
+#org @NAME_COSMIC_SURGE
+Cosmic Surge
 
 //Below Abilities are loaded dynamically by the engine
 #org @gText_AbilityName_AirLock
@@ -988,3 +988,6 @@ Wind Rider
 
 #org @gText_AbilityName_ZerotoHero
 Zero to Hero
+
+#org @gText_AbilityName_CosmicSurge
+Cosmic Surge
