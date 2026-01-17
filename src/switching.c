@@ -63,6 +63,7 @@ enum SwitchInStates
 	SwitchIn_EjectPack,
 	SwitchIn_ReactivateTera,
 	SwitchIn_End,
+	SwitchIn_CosmicTerrain,
 };
 
 //This file's functions:
@@ -974,6 +975,23 @@ void atk52_switchineffects(void)
 			}
 			++gNewBS->switchInEffectsState;
 		__attribute__ ((fallthrough));
+
+		case SwitchIn_CosmicTerrain:
+			if (gTerrainType == COSMIC_TERRAIN
+				&& CheckGrounding(gActiveBattler) != IN_AIR)
+			{
+				BattleScriptPushCursor();
+				gStatuses3[gActiveBattler] = STATUS3_TELEKINESIS;
+				return;
+			}
+			else if (gTerrainType != COSMIC_TERRAIN && gStatuses3[gActiveBattler] == STATUS3_TELEKINESIS)
+			{
+				BattleScriptPushCursor();
+				gStatuses3[gActiveBattler] = 0;
+				return;
+			}
+			++gNewBS->switchInEffectsState;
+			__attribute__((fallthrough));
 
 		case SwitchIn_PixieBoost:
 			if (IsPixieBattle())

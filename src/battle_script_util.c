@@ -1677,6 +1677,17 @@ void MakeSwitchingBankInvisible(void)
 
 void TransferTerrainData(void)
 {
+	if (gTerrainType != COSMIC_TERRAIN)
+	{
+		for (int i = 0; i < gBattlersCount; i++)
+		{
+			if (gStatuses3[i] == STATUS3_TELEKINESIS)
+			{
+				gStatuses3[i] = 0;
+			}
+		}
+	}
+
 	if (gBattleExecBuffer)
 		gBattlescriptCurrInstr -= 5;
 	else
