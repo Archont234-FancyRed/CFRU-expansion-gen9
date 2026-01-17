@@ -635,7 +635,18 @@ u8 AIScript_Negatives(const u8 bankAtk, const u8 bankDef, const u16 originalMove
 
 	//Terrain Check
 	switch (gTerrainType) {
+
+		if (gTerrainType != COSMIC_TERRAIN)
+		{
+			for (int i = 0; i < gBattlersCount; ++i)
+			{
+				if (gStatuses3[i] == STATUS3_TELEKINESIS)
+					gStatuses3[i] = 0;
+			}
+		}
+
 		case ELECTRIC_TERRAIN:
+
 			if (moveEffect == EFFECT_SLEEP || moveEffect == EFFECT_YAWN)
 			{
 				if (CheckGrounding(bankDef) == GROUNDED)
@@ -672,7 +683,7 @@ u8 AIScript_Negatives(const u8 bankAtk, const u8 bankDef, const u16 originalMove
 			if (CheckGrounding(bankDef) == GROUNDED)
 			{
 				for (int i = 0; i < gBattlersCount; ++i)
-					gStatuses3[i] |= STATUS3_LEVITATING;
+					gStatuses3[i] = STATUS3_TELEKINESIS;
 			}
 			break;
 	}
